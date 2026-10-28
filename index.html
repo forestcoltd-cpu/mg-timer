@@ -1,102 +1,3521 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="robots" content="noindex,nofollow">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="フォレストMGタイマー">
-<title>フォレストMG タイマー＆成績表連動</title>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>フォレストMG研修 タイマー＆シニアルール・成績表(K)連動システム</title>
 <style>
-  body {
-    margin: 0; background: #0f172a; color: #f8fafc;
-    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", sans-serif;
-    display: flex; align-items: center; justify-content: center; min-height: 100vh;
-    text-align: center; padding: 20px; box-sizing: border-box;
+  :root {
+    --bg-dark: #070d19;
+    --bg-card: #10192b;
+    --bg-card-2: #162238;
+    --border-col: rgba(255, 255, 255, 0.12);
+    --text-main: #f8fafc;
+    --text-sub: #94a3b8;
+    --accent: #10b981;
+    --accent-glow: rgba(16, 185, 129, 0.35);
+    --gold: #f59e0b;
+    --danger: #ef4444;
+    --blue: #3b82f6;
+    --purple: #a855f7;
   }
-  .box {
-    background: #1e293b; border: 1px solid #334155; border-radius: 16px;
-    padding: 28px 24px; max-width: 440px; width: 100%;
-    box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
   }
-  .spinner {
-    width: 42px; height: 42px; border: 4px solid #334155; border-top-color: #38bdf8;
-    border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+
+  html, body {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    background: radial-gradient(circle at 35% 20%, #132038 0%, #070d19 80%);
+    color: var(--text-main);
+    font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', 'Meiryo', sans-serif;
+    -webkit-tap-highlight-color: transparent;
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  h1 { font-size: 19px; margin: 0 0 8px; color: #fff; }
-  p { font-size: 13px; color: #94a3b8; margin: 0 0 16px; line-height: 1.5; }
-  .btn {
-    display: inline-block; background: #0284c7; color: #fff; text-decoration: none;
-    padding: 12px 20px; border-radius: 10px; font-weight: 700; font-size: 14px; margin-top: 8px;
+
+  /* 全体4段グリッド：1280px幅・ノートPC・iPad画面でも絶対に横切れ・縦重なりしない構造 */
+  .app-shell {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
+    padding: 6px 10px;
+    gap: 6px;
+    overflow: hidden;
+  }
+
+  /* ========== 1段目：トップヘッダー ========== */
+  .top-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    background: rgba(16, 25, 43, 0.92);
+    border: 1px solid var(--border-col);
+    border-radius: 9px;
+    padding: 4px 10px;
+    min-height: 38px;
+    min-width: 0;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .brand-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .brand-logo {
+    font-size: 14px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+
+  .brand-logo .badge-mg {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #042f2e;
+    font-size: 11px;
+    font-weight: 900;
+    padding: 2px 6px;
+    border-radius: 5px;
+  }
+
+  .kai-select {
+    background: #1e293b;
+    color: #f8fafc;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    padding: 3px 6px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .period-tabs {
+    display: flex;
+    gap: 3px;
+    background: rgba(0, 0, 0, 0.35);
+    padding: 2px;
+    border-radius: 7px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .period-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-sub);
+    font-size: 12px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .period-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+  .period-btn.active {
+    background: var(--accent);
+    color: #032218;
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+
+  .auto-relay-pill {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #a7f3d0;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    padding: 3px 8px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .auto-relay-pill input { accent-color: #10b981; cursor: pointer; }
+
+  .clock-chip {
+    font-size: 13px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: #cbd5e1;
+    background: rgba(255,255,255,0.06);
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+
+  .icon-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.16);
+    color: #e2e8f0;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .icon-btn:hover { background: rgba(255,255,255,0.16); color: #fff; }
+  .icon-btn.active-toggle {
+    background: rgba(59, 130, 246, 0.25);
+    border-color: #60a5fa;
+    color: #93c5fd;
+  }
+
+  /* ========== 2段目：4フェーズ進行バー ＋ 期首サイコロ＆シニアルール見える化バー ========== */
+  .top-sub-row {
+    display: grid;
+    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+    gap: 6px;
+    align-items: stretch;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .phase-stepper {
+    display: flex;
+    align-items: center;
+    background: rgba(16, 25, 43, 0.85);
+    border: 1px solid var(--border-col);
+    border-radius: 9px;
+    padding: 3px 6px;
+    gap: 3px;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .step-item {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 4px 4px;
+    border-radius: 6px;
+    cursor: pointer;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    min-width: 0;
+  }
+  .step-item:hover { background: rgba(255,255,255,0.08); }
+  .step-item.active {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: var(--accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+  .step-item.done { opacity: 0.55; }
+
+  .step-num {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.14);
+    font-size: 10px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-item.active .step-num {
+    background: var(--accent);
+    color: #032218;
+  }
+  .step-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+    min-width: 0;
+  }
+  .step-name { font-size: 11px; font-weight: 800; color: #f8fafc; white-space: nowrap; }
+  .step-dur { font-size: 9.5px; font-weight: 700; color: var(--text-sub); white-space: nowrap; }
+  .step-arrow { color: #475569; font-size: 10px; font-weight: 900; flex-shrink: 0; }
+
+  /* サイコロ＆シニアルール見える化バー */
+  .dice-rule-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    background: linear-gradient(90deg, rgba(22, 34, 56, 0.95), rgba(16, 25, 43, 0.95));
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: 9px;
+    padding: 3px 8px;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .dice-selector-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .dice-title-tag {
+    font-size: 11px;
+    font-weight: 900;
+    padding: 2px 6px;
+    border-radius: 5px;
+    background: rgba(245, 158, 11, 0.2);
+    color: #fde68a;
+    border: 1px solid rgba(245, 158, 11, 0.45);
+    white-space: nowrap;
+  }
+
+  .dice-btn {
+    width: 27px;
+    height: 27px;
+    border-radius: 5px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.06);
+    color: #e2e8f0;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .dice-btn:hover { background: rgba(245, 158, 11, 0.25); border-color: #f59e0b; }
+  .dice-btn.active {
+    background: #f59e0b;
+    color: #1e1b4b;
+    border-color: #fef08a;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+    transform: scale(1.05);
+  }
+
+  .dice-roll-btn {
+    background: rgba(168, 85, 247, 0.22);
+    border: 1px solid rgba(168, 85, 247, 0.5);
+    color: #e9d5ff;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 4px 7px;
+    border-radius: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .dice-roll-btn:hover { background: rgba(168, 85, 247, 0.38); }
+
+  .rule-badges-wrap {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: nowrap;
+    min-width: 0;
+    overflow-x: auto;
+  }
+  .rule-badges-wrap::-webkit-scrollbar { height: 0; width: 0; }
+
+  .rule-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 7px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .rule-chip.keihi {
+    background: rgba(16, 185, 129, 0.16);
+    border: 1px solid rgba(16, 185, 129, 0.45);
+    color: #a7f3d0;
+  }
+  .rule-chip.keihi strong { font-size: 13px; color: #34d399; }
+  .rule-chip.heisa {
+    background: rgba(239, 68, 68, 0.18);
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    color: #fecaca;
+  }
+  .rule-chip.heisa strong { font-size: 12px; color: #f87171; }
+  .rule-chip.osaka {
+    background: rgba(59, 130, 246, 0.18);
+    border: 1px solid rgba(59, 130, 246, 0.48);
+    color: #bfdbfe;
+  }
+  .rule-chip.osaka strong { font-size: 12px; color: #60a5fa; }
+
+  /* ========== 3段目：メインステージ（左：巨大タイマー＆シニアルール早見表 ／ 右：★MG成績表★ 計数K双方向ボード） ========== */
+  .main-stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.98fr);
+    gap: 8px;
+    min-height: 0;
+    min-width: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .main-stage.hide-sidebar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .main-stage.hide-sidebar .seiseki-panel {
+    display: none;
+  }
+
+  /* 左：タイマーメインカード */
+  .timer-panel {
+    background: rgba(16, 25, 43, 0.78);
+    border: 1px solid var(--border-col);
+    border-radius: 12px;
+    padding: 8px 12px;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    gap: 6px;
+    align-items: center;
+    justify-items: center;
+    min-height: 0;
+    min-width: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* シニアルール大型見える化カード（3枠すっきり表示・コンパクト1行収まり） */
+  .senior-visual-strip {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1.4fr 1.05fr 0.75fr;
+    gap: 8px;
+    background: rgba(10, 16, 30, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 9px;
+    padding: 6px 10px;
+    min-width: 0;
+  }
+
+  .sv-box {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.03);
+    border-left: 3px solid var(--accent);
+    min-width: 0;
+    overflow: hidden;
+  }
+  .sv-box.heisa-box { border-left-color: #ef4444; background: rgba(239, 68, 68, 0.08); }
+  .sv-box.osaka-box { border-left-color: #3b82f6; background: rgba(59, 130, 246, 0.08); }
+  .sv-box.matrix-box { border-left-color: #f59e0b; background: rgba(245, 158, 11, 0.06); }
+
+  .sv-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--text-sub);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sv-val {
+    font-size: clamp(13px, 1.3vw, 18px);
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.2;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sv-sub {
+    font-size: 10px;
+    font-weight: 700;
+    color: #cbd5e1;
+    line-height: 1.2;
+    margin-top: 1px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .quick-calc-table {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 2px;
+    margin-top: 2px;
+    text-align: center;
+  }
+  .qc-cell {
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 2px 1px;
+    line-height: 1.1;
+  }
+  .qc-cell .qc-n { font-size: 9px; color: #94a3b8; font-weight: 700; display: block; white-space: nowrap; }
+  .qc-cell .qc-v { font-size: 12px; color: #fde68a; font-weight: 900; }
+
+  /* 中央：メインタイマー表示領域（縦溢れ防止） */
+  .timer-center-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: 2px 0;
+    overflow: hidden;
+  }
+
+  .phase-banner-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 2px;
+    flex-shrink: 0;
+  }
+
+  .current-phase-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 14px;
+    border-radius: 999px;
+    font-size: clamp(13px, 1.4vw, 20px);
+    font-weight: 900;
+    background: rgba(16, 185, 129, 0.16);
+    border: 2px solid var(--accent);
+    color: #fff;
+    box-shadow: 0 0 14px var(--accent-glow);
+  }
+
+  .status-badge {
+    font-size: 11px;
+    font-weight: 900;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.1);
+    color: #cbd5e1;
+  }
+  .status-badge.running {
+    background: rgba(16, 185, 129, 0.25);
+    color: #6ee7b7;
+    border: 1px solid #10b981;
+  }
+
+  /* 巨大デジタル数字（幅・高さの両方に連動して絶対に上下のバーと重ならない） */
+  .timer-digits {
+    font-size: clamp(54px, min(12vw, 19vh), 185px);
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    line-height: 0.96;
+    color: #ffffff;
+    text-shadow: 0 0 28px var(--accent-glow), 0 4px 12px rgba(0, 0, 0, 0.8);
+    margin: 2px 0;
+    transition: color 0.25s;
+    flex-shrink: 0;
+  }
+  .timer-digits.warn-color {
+    color: #fde047;
+    text-shadow: 0 0 35px rgba(250, 204, 21, 0.55);
+  }
+  .timer-digits.danger-color {
+    color: #ff6b6b;
+    text-shadow: 0 0 40px rgba(239, 68, 68, 0.75);
+    animation: pulseDanger 1s infinite alternate;
+  }
+  .timer-digits.keisu-color {
+    color: #c084fc;
+    text-shadow: 0 0 38px rgba(168, 85, 247, 0.65);
+  }
+
+  @keyframes pulseDanger {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.02); }
+  }
+
+  .message-guide {
+    font-size: clamp(11px, 1.1vw, 15px);
+    font-weight: 700;
+    color: #cbd5e1;
+    text-align: center;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    flex-shrink: 0;
+  }
+
+  /* 裏（サブ）計数タイマー ＆ 全体残り時間バー */
+  .dual-timer-subbar {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: nowrap;
+    padding: 5px 8px;
+    background: rgba(10, 16, 30, 0.85);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 9px;
+    min-width: 0;
+  }
+
+  /* 先行卓（A卓等）終了時から裏で回る計数タイマーカード（または計数メイン時の後半タイマー保持カード） */
+  .bg-keisu-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.28), rgba(88, 28, 135, 0.4));
+    border: 2px solid #a855f7;
+    box-shadow: 0 0 14px rgba(168, 85, 247, 0.3);
+    flex: 1;
+    min-width: 0;
+  }
+  .bg-keisu-card.inactive {
+    background: rgba(255,255,255,0.05);
+    border: 1px dashed rgba(255,255,255,0.22);
+    box-shadow: none;
+  }
+  .bg-keisu-card.game-sub-mode {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.28), rgba(30, 58, 138, 0.45));
+    border: 2px solid #60a5fa;
+    box-shadow: 0 0 14px rgba(59, 130, 246, 0.3);
+  }
+  .bg-keisu-label {
+    font-size: 12px;
+    font-weight: 900;
+    color: #f3e8ff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bg-keisu-time {
+    font-size: clamp(18px, 1.9vw, 26px);
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    color: #ffffff;
+    text-shadow: 0 0 10px rgba(168, 85, 247, 0.6);
+    white-space: nowrap;
+  }
+  .sub-mini-btns {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+  }
+  .sub-mini-btn {
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.28);
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 800;
+    padding: 3px 7px;
+    border-radius: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .sub-mini-btn:hover {
+    background: rgba(255,255,255,0.25);
+  }
+  .step-item.dual-running {
+    border-color: #a855f7;
+    background: rgba(168, 85, 247, 0.22);
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.45);
+  }
+
+  .sub-stat-pill {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: var(--text-sub);
+    background: rgba(255,255,255,0.04);
+    padding: 4px 8px;
+    border-radius: 7px;
+    border: 1px solid rgba(255,255,255,0.08);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .sub-stat-pill strong {
+    color: #f8fafc;
+    font-variant-numeric: tabular-nums;
+    margin-left: 3px;
+  }
+
+  /* プログレスバー */
+  .progress-wrap {
+    width: 100%;
+    height: 6px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, var(--accent), #34d399);
+    transition: width 0.25s linear;
+  }
+
+  /* ========== 右パネル：★MG成績表★ 計数順位（K）リアルタイム双方向リンク ========== */
+  .seiseki-panel {
+    background: rgba(16, 25, 43, 0.92);
+    border: 1px solid rgba(168, 85, 247, 0.35);
+    border-radius: 12px;
+    padding: 8px 10px;
+    display: grid;
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    gap: 5px;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .sp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .sp-title {
+    font-size: 13px;
+    font-weight: 900;
+    color: #f3e8ff;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+
+  .sync-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 8px #10b981;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .sync-dot.syncing { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
+  .sync-dot.error { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+
+  .sp-next-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    background: linear-gradient(90deg, rgba(168, 85, 247, 0.22), rgba(59, 130, 246, 0.18));
+    border: 1px solid rgba(168, 85, 247, 0.45);
+    border-radius: 8px;
+    padding: 4px 8px;
+    min-width: 0;
+  }
+
+  .next-k-box {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  .next-k-label { font-size: 11px; font-weight: 800; color: #e9d5ff; }
+  .next-k-num { font-size: 18px; font-weight: 900; color: #fde047; }
+
+  /* 卓終了（残り3分＋裏で計数スタート）ワンタッチボタン群 */
+  .table-finish-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .taku-filter-btn {
+    padding: 3px 7px;
+    border-radius: 5px;
+    border: 1px solid rgba(255,255,255,0.16);
+    background: rgba(255,255,255,0.05);
+    color: #cbd5e1;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .taku-filter-btn.active {
+    background: #3b82f6;
+    color: #fff;
+    border-color: #93c5fd;
+  }
+
+  /* 受講生24名カードグリッド：3列または4列で氏名が絶対に途切れない2段カード構造 */
+  .players-grid {
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+    gap: 5px;
+    padding-right: 2px;
+    align-content: start;
+    min-width: 0;
+  }
+
+  .player-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 3px;
+    padding: 5px 8px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    cursor: pointer;
+    transition: all 0.14s;
+    min-width: 0;
+  }
+  .player-card:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(168, 85, 247, 0.65);
+    transform: translateY(-1px);
+  }
+  .player-card.done-k {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(6, 95, 70, 0.34));
+    border-color: rgba(16, 185, 129, 0.7);
+  }
+  .player-card.top4-k {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.26), rgba(146, 64, 14, 0.34));
+    border-color: rgba(245, 158, 11, 0.8);
+  }
+
+  /* 1行目：卓バッジ＋フルネーム（Kバッジを2行目に分離したため氏名が横幅100%使えて切れない！） */
+  .pc-top-line {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    width: 100%;
+  }
+  .taku-tag {
+    font-size: 10px;
+    font-weight: 900;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: #1e3a8a;
+    color: #93c5fd;
+    flex-shrink: 0;
+  }
+  .taku-tag.t-A { background: #1e3a8a; color: #93c5fd; }
+  .taku-tag.t-B { background: #065f46; color: #6ee7b7; }
+  .taku-tag.t-C { background: #7c2d12; color: #fdba74; }
+  .taku-tag.t-D { background: #581c87; color: #e9d5ff; }
+
+  .pc-name {
+    font-size: 13px;
+    font-weight: 900;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+    letter-spacing: -0.01em;
+  }
+
+  /* 2行目：左にPQ・自己資本・来期評価・経過時間 ／ 右にK順位バッジ */
+  .pc-bottom-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    width: 100%;
+  }
+  .pc-sub {
+    font-size: 10px;
+    font-weight: 700;
+    color: #cbd5e1;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .jiko-pill {
+    background: rgba(59, 130, 246, 0.28);
+    border: 1px solid rgba(96, 165, 250, 0.6);
+    color: #dbeafe;
+    font-size: 9.5px;
+    font-weight: 900;
+    padding: 0px 4px;
+    border-radius: 4px;
+  }
+  .hyoka-pill {
+    background: rgba(245, 158, 11, 0.28);
+    border: 1px solid rgba(251, 191, 36, 0.7);
+    color: #fef08a;
+    font-size: 9.5px;
+    font-weight: 900;
+    padding: 0px 4px;
+    border-radius: 4px;
+  }
+  .hyoka-quick-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .hyoka-quick-btn {
+    padding: 8px 4px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.22);
+    background: rgba(255,255,255,0.07);
+    color: #f8fafc;
+    font-size: 14px;
+    font-weight: 900;
+    cursor: pointer;
+    text-align: center;
+    line-height: 1.15;
+    transition: all 0.12s;
+  }
+  .hyoka-quick-btn:hover {
+    background: rgba(168, 85, 247, 0.28);
+    border-color: #c084fc;
+  }
+  .hyoka-quick-btn.active {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #1e1b4b;
+    border-color: #fde047;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+  }
+  .hyoka-quick-sub {
+    display: block;
+    font-size: 9.5px;
+    font-weight: 700;
+    opacity: 0.85;
+    margin-top: 2px;
+  }
+
+  .k-badge {
+    font-size: 11px;
+    font-weight: 900;
+    padding: 1px 6px;
+    border-radius: 5px;
+    background: rgba(255,255,255,0.09);
+    color: #94a3b8;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .player-card.done-k .k-badge {
+    background: #10b981;
+    color: #022c22;
+  }
+  .player-card.top4-k .k-badge {
+    background: #f59e0b;
+    color: #1e1b4b;
+  }
+
+  .sp-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-sub);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 5px;
+  }
+  .sp-footer a {
+    color: #93c5fd;
+    text-decoration: none;
+    font-weight: 700;
+  }
+  .sp-footer a:hover { text-decoration: underline; }
+
+  /* ========== 🏆 表彰・ランキング大画面ダッシュボード（5期自己資本ソート ＆ 2〜5期 計数K早い順） ========== */
+  .hyosho-dashboard {
+    display: none;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 10px;
+    min-height: 0;
+    min-width: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+  body.show-hyosho .main-stage {
+    display: none !important;
+  }
+  body.show-hyosho .top-sub-row {
+    display: none !important;
+  }
+  body.show-hyosho .app-shell {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+  body.show-hyosho .hyosho-dashboard {
+    display: grid !important;
+  }
+
+  .hyosho-col-panel {
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(245, 158, 11, 0.45);
+    border-radius: 12px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .hyosho-col-panel.k-panel {
+    border-color: rgba(168, 85, 247, 0.45);
+  }
+  .hyosho-head-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 6px;
+  }
+  .hyosho-head-title {
+    font-size: 16px;
+    font-weight: 900;
+    color: #fde047;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .special-awards-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .sp-award-box {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    padding: 5px 8px;
+    min-width: 0;
+  }
+  .sp-award-title {
+    font-size: 10.5px;
+    font-weight: 900;
+    color: #93c5fd;
+    margin-bottom: 2px;
+    white-space: nowrap;
+  }
+  .sp-award-names {
+    font-size: 12px;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.25;
+  }
+
+  .jiko-rank-list {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-right: 4px;
+    min-height: 0;
+    flex: 1;
+  }
+  .jiko-rank-row {
+    display: grid;
+    grid-template-columns: 46px minmax(95px, 1.3fr) 86px 70px 100px 92px 54px;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    cursor: pointer;
+    transition: all 0.12s;
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .jiko-rank-row:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: #60a5fa;
+  }
+  .jiko-rank-row.qualified-pp {
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.22), rgba(16, 185, 129, 0.14));
+    border-color: rgba(251, 191, 36, 0.75);
+  }
+  .jiko-rank-row.top1-row {
+    background: linear-gradient(90deg, rgba(250, 204, 21, 0.32), rgba(217, 119, 6, 0.22));
+    border: 2px solid #fde047;
+    box-shadow: 0 0 15px rgba(250, 204, 21, 0.25);
+  }
+
+  .k-4cols-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    min-height: 0;
+    flex: 1;
+    overflow: hidden;
+  }
+  .k-period-col {
+    background: rgba(10, 16, 30, 0.78);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 9px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .k-period-head {
+    padding: 6px 8px;
+    font-size: 12.5px;
+    font-weight: 900;
+    text-align: center;
+    background: rgba(168, 85, 247, 0.22);
+    border-bottom: 1px solid rgba(168, 85, 247, 0.4);
+    color: #f3e8ff;
+    white-space: nowrap;
+  }
+  .k-period-head.ki5-head {
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.32), rgba(168, 85, 247, 0.32));
+    color: #fde047;
+    border-bottom-color: #f59e0b;
+  }
+  .k-period-list {
+    overflow-y: auto;
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-height: 0;
+  }
+  .k-rank-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    min-width: 0;
+  }
+  .k-rank-item:hover {
+    background: rgba(255,255,255,0.12);
+  }
+  .k-rank-item.k-top4 {
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.26), rgba(146, 64, 14, 0.24));
+    border-color: rgba(251, 191, 36, 0.75);
+    color: #fef08a;
+  }
+  .k-rank-num {
+    font-size: 11px;
+    font-weight: 900;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.12);
+    color: #e2e8f0;
+    flex-shrink: 0;
+  }
+  .k-rank-item.k-top4 .k-rank-num {
+    background: #f59e0b;
+    color: #1e1b4b;
+  }
+
+  /* ========== 4段目：ボトム操作ドック ========== */
+  .bottom-dock {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: rgba(16, 25, 43, 0.92);
+    border: 1px solid var(--border-col);
+    border-radius: 10px;
+    padding: 6px 12px;
+    flex-wrap: wrap;
+  }
+
+  .dock-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .ctrl-btn {
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.08);
+    color: #f8fafc;
+    font-size: 13px;
+    font-weight: 800;
+    padding: 7px 13px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .ctrl-btn:hover { background: rgba(255,255,255,0.16); }
+
+  .ctrl-btn.btn-play {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #032218;
+    border: none;
+    font-size: 15px;
+    font-weight: 900;
+    padding: 7px 20px;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+  }
+  .ctrl-btn.btn-play.is-running {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #1e1b4b;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+  }
+
+  .ctrl-btn.btn-3min {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #fff;
+    border: 1px solid #fca5a5;
+    font-weight: 900;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.45);
+  }
+  .ctrl-btn.btn-3min:hover { filter: brightness(1.1); }
+
+  .ctrl-btn.btn-keisu {
+    background: linear-gradient(135deg, #a855f7, #7e22ce);
+    color: #fff;
+    border: 1px solid #d8b4fe;
+    font-weight: 900;
+  }
+
+  /* 全画面（プロジェクター最大化）モード：サイドバーや上部余白を畳んでタイマーを最大化 */
+  body.zen-fullscreen .top-sub-row {
+    display: none;
+  }
+  body.zen-fullscreen .app-shell {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    padding: 4px 10px;
+    gap: 6px;
+  }
+  body.zen-fullscreen .main-stage {
+    grid-template-columns: 1fr !important;
+  }
+  body.zen-fullscreen .seiseki-panel {
+    display: none !important;
+  }
+  body.zen-fullscreen .timer-digits {
+    font-size: clamp(90px, min(22vw, 36vh), 300px);
+  }
+
+  /* 編集モーダル */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.72);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  .modal-backdrop.open { display: flex; }
+
+  .modal-card {
+    background: #111c30;
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 14px;
+    padding: 18px 22px;
+    width: 380px;
+    max-width: 92vw;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.75);
+  }
+  .modal-title { font-size: 17px; font-weight: 900; margin-bottom: 12px; color: #fff; }
+  .modal-field { margin-bottom: 12px; }
+  .modal-field label { display: block; font-size: 12px; font-weight: 800; color: #94a3b8; margin-bottom: 4px; }
+  .modal-field input {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 7px;
+    border: 1px solid rgba(255,255,255,0.25);
+    background: #0b1322;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 800;
+  }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 14px;
   }
 </style>
 </head>
 <body>
-<div class="box">
-  <div class="spinner" id="sp"></div>
-  <h1>⏱️ フォレストMG タイマーへ接続中...</h1>
-  <p id="msg">最新のMGタイマー画面を開いています（このURLは第94回以降もずっと固定で使えます）</p>
-  <div id="fallback" style="display:none">
-    <a id="directBtn" class="btn" href="#">タイマー画面を開く</a>
+
+<div class="app-shell">
+  <!-- ========== 1段目：トップヘッダー ========== -->
+  <header class="top-header">
+    <div class="brand-group">
+      <div class="brand-logo">
+        <span class="badge-mg">FOREST MG</span>
+        <span>フォレストMG プロジェクタータイマー</span>
+      </div>
+
+      <!-- 開催回セレクター（★MG成績表★連動） -->
+      <select id="kaiSelect" class="kai-select" onchange="onChangeKai()">
+        <option value="93">第93回 MG</option>
+      </select>
+
+      <!-- 期セレクター -->
+      <div class="period-tabs">
+        <button class="period-btn" id="pbtn-2" onclick="selectPeriod(2, this)">2期 (22円)</button>
+        <button class="period-btn" id="pbtn-3" onclick="selectPeriod(3, this)">3期 (24円)</button>
+        <button class="period-btn active" id="pbtn-4" onclick="selectPeriod(4, this)">4期 (26円×サイコロ)</button>
+        <button class="period-btn" id="pbtn-5" onclick="selectPeriod(5, this)">5期 (28円×サイコロ)</button>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button class="icon-btn" id="hyoshoTopBtn" style="background:linear-gradient(135deg, rgba(245,158,11,0.32), rgba(217,119,6,0.28)); border-color:#fbbf24; color:#fef08a; font-weight:900;" onclick="toggleHyoshoDashboard()" title="5期の自己資本ソート（表彰対象）と2期〜5期の計数(K)早い順を大画面表示します">
+        🏆 表彰・計数順画面
+      </button>
+      <label class="auto-relay-pill" title="前半11分→休憩2分→後半22分→計数タイムを自動でリレーします">
+        <input type="checkbox" id="autoRelayToggle" checked>
+        🔄 自動リレー
+      </label>
+      <button class="icon-btn active-toggle" id="toggleSidebarBtn" onclick="toggleSeisekiPanel()">
+        📊 成績表(K)表示中
+      </button>
+      <button class="icon-btn" onclick="playChime('single')">🔔 ベル</button>
+      <button class="icon-btn" style="background:rgba(59,130,246,0.22); border-color:#60a5fa; color:#bfdbfe;" onclick="openIpadQrModal()" title="iPadのカメラで読み取ってタイマーを同期表示します">📱 iPad表示(QR)</button>
+      <button class="icon-btn" id="zenFsBtn" onclick="toggleFullScreen()" title="タイマーを全画面最大化（埋め込み画面ではモニター全画面ウィンドウも起動）">⛶ 全画面</button>
+      <button class="icon-btn" style="background:rgba(16,185,129,0.2); border-color:#10b981; color:#a7f3d0;" onclick="openExternalFullscreenWindow()" title="プロジェクター投影用にモニター全体のフルスクリーンウィンドウを開きます">🖥 全画面窓</button>
+      <div class="clock-chip" id="realClock">--:--:--</div>
+    </div>
+  </header>
+
+  <!-- ========== 2段目：4フェーズ進行ステップ ＆ サイコロ出目セレクター ========== -->
+  <div class="top-sub-row">
+    <!-- 4フェーズ進行バー -->
+    <div class="phase-stepper">
+      <div class="step-item active" id="step-first" onclick="switchPhase('first', false)">
+        <div class="step-num">1</div>
+        <div class="step-text">
+          <span class="step-name">前半</span>
+          <span class="step-dur">11分</span>
+        </div>
+      </div>
+      <span class="step-arrow">▶</span>
+      <div class="step-item" id="step-break" onclick="switchPhase('break', false)">
+        <div class="step-num">2</div>
+        <div class="step-text">
+          <span class="step-name">休憩</span>
+          <span class="step-dur">2分</span>
+        </div>
+      </div>
+      <span class="step-arrow">▶</span>
+      <div class="step-item" id="step-second" onclick="switchPhase('second', false)">
+        <div class="step-num">3</div>
+        <div class="step-text">
+          <span class="step-name">後半</span>
+          <span class="step-dur">22分</span>
+        </div>
+      </div>
+      <span class="step-arrow">▶</span>
+      <div class="step-item" id="step-keisu" onclick="onClickKeisuStep()">
+        <div class="step-num">4</div>
+        <div class="step-text">
+          <span class="step-name">計数</span>
+          <span class="step-dur" id="stepKeisuDur">決算計測</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 期首サイコロ（シニアルール）選択バー -->
+    <div class="dice-rule-bar">
+      <div class="dice-selector-group" id="diceSelectorGroup">
+        <span class="dice-title-tag" id="ruleModeTag">🎲 4期 期首サイコロ</span>
+        <button class="dice-btn active" id="dice-1" onclick="selectDice(1)">⚀1</button>
+        <button class="dice-btn" id="dice-2" onclick="selectDice(2)">⚁2</button>
+        <button class="dice-btn" id="dice-3" onclick="selectDice(3)">⚂3</button>
+        <button class="dice-btn" id="dice-4" onclick="selectDice(4)">⚃4</button>
+        <button class="dice-btn" id="dice-5" onclick="selectDice(5)">⚄5</button>
+        <button class="dice-btn" id="dice-6" onclick="selectDice(6)">⚅6</button>
+      </div>
+
+      <div class="rule-badges-wrap">
+        <div class="rule-chip keihi" onclick="cycleCustomKeihi()" title="1〜3は×1.1倍、4〜6は×1.2倍（四捨五入）">
+          💰 期末経費 <strong id="chipKeihi">@29円</strong> <span id="chipHonsha" style="font-size:11px;">(26×1.1倍／全社員@14)</span>
+        </div>
+        <div class="rule-chip heisa" onclick="cycleCustomHeisa()" title="1〜3は1市場閉鎖、4〜6は2市場閉鎖">
+          🚫 <strong id="chipHeisa">1市場閉鎖（仙台）</strong>
+        </div>
+        <div class="rule-chip osaka" title="大阪＝20円＋サイコロの目">
+          🏯 大阪 <strong id="chipOsaka">21円</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 3段目：メインステージ ========== -->
+  <div class="main-stage" id="mainStage">
+    <!-- 左側：巨大タイマー ＆ シニアルール早見パネル -->
+    <section class="timer-panel">
+      <!-- シニアルール大型見える化ストリップ（経費単価・市場閉鎖・大阪価格・人数別早見表） -->
+      <div class="senior-visual-strip">
+        <div class="sv-box">
+          <span class="sv-label" id="svPeriodRuleLabel">🎲 4期 シニアルール（出目：⚀ 1 ➔ ×1.1倍）</span>
+          <div class="sv-val" id="svKeihiMain" style="color:#34d399;">期末経費 ＠29円（全社員＠14円）</div>
+          <span class="sv-sub" id="svKeihiSub">第1表L⑦：ワーカー29/機械29/セールス29/全14×人（退職0.5人＝15）</span>
+        </div>
+        <div class="sv-box heisa-box">
+          <span class="sv-label">🚫 市場閉鎖（1〜3:1市場 / 4〜6:2市場）</span>
+          <div class="sv-val" id="svHeisaMain" style="color:#f87171;">1市場閉鎖（仙台）</div>
+          <span class="sv-sub" id="svHeisaSub">出目1・2・3＝1市場閉鎖 ／ 出目4・5・6＝2市場閉鎖</span>
+        </div>
+        <div class="sv-box osaka-box">
+          <span class="sv-label">🏯 大阪市場（20円＋サイコロの目）</span>
+          <div class="sv-val" id="svOsakaMain" style="color:#60a5fa;">大阪 21円</div>
+          <span class="sv-sub" id="svOsakaSub">20円 ＋ 出目1 ＝ 21円</span>
+        </div>
+      </div>
+
+      <!-- 中央：巨大タイマー -->
+      <div class="timer-center-box">
+        <div class="phase-banner-row">
+          <div class="current-phase-pill" id="currentPhaseBanner">
+            <span id="phaseIcon">▶</span>
+            <span id="phaseTitleText">前半（11分）</span>
+          </div>
+          <span class="status-badge" id="statusBadge">⏸ 待機中</span>
+        </div>
+
+        <div class="timer-digits" id="timerDigits">11:00</div>
+
+        <div class="message-guide" id="messageGuide">
+          スペースキー または「▶ スタート」で前半11分を開始します
+        </div>
+      </div>
+
+      <!-- 下部：裏（サブ）計数タイマー ＆ 後半タイマー保持バー（どちらも絶対に消えない2系統同時表示） -->
+      <div class="dual-timer-subbar">
+        <!-- サブタイマーカード（メインが後半の時は「裏・計数タイマー」、メインが計数の時は「後半残りタイマー」を表示） -->
+        <div class="bg-keisu-card inactive" id="bgKeisuCard">
+          <div style="min-width:0;">
+            <div class="bg-keisu-label" id="bgKeisuLabel">📊 裏・計数（決算）タイマー（待機中）</div>
+            <div style="font-size:11px; color:#cbd5e1; margin-top:2px;" id="bgKeisuSub">「🔥1卓終了→残り3分」または「📊計数スタート」で後半タイマーを残したまま同時計測します</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
+            <div class="bg-keisu-time" id="bgKeisuTime">00:00</div>
+            <div class="sub-mini-btns" id="subCardButtons">
+              <button class="sub-mini-btn" onclick="toggleBgKeisuOnly()">▶ 計数スタート</button>
+              <button class="sub-mini-btn" onclick="swapMainAndSubView()">⇄ 大画面入替</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sub-stat-pill" id="totalGameRemainBox">
+          後半残り：<strong id="totalGameRemain">22:00</strong>
+        </div>
+
+        <div class="sub-stat-pill">
+          計数経過：<strong id="phaseElapsed" style="color:#e9d5ff;">00:00</strong>
+        </div>
+      </div>
+
+      <!-- プログレスバー -->
+      <div class="progress-wrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+    </section>
+
+    <!-- 右側：『★MG成績表★』計数順位（K）双方向リンクパネル -->
+    <aside class="seiseki-panel" id="seisekiPanel">
+      <div class="sp-header">
+        <div class="sp-title">
+          <span class="sync-dot" id="syncDot"></span>
+          <span id="spHeaderTitle">★MG成績表★ 計数順位(K)連動</span>
+        </div>
+        <div style="display:flex; gap:4px;">
+          <button class="icon-btn" style="background:rgba(245,158,11,0.25); border-color:#f59e0b; color:#fde047;" onclick="toggleHyoshoDashboard()" title="5期自己資本ソート＆2〜5期K早い順の大画面を開く">🏆 表彰画面</button>
+          <button class="icon-btn" onclick="syncFromSheet(true)" title="今すぐGoogleスプレッドシートと同期">🔄 同期</button>
+          <button class="icon-btn" onclick="confirmClearPeriodK()" title="今期のK順位をリセット">🗑 Kクリア</button>
+        </div>
+      </div>
+
+      <!-- 次のK順位 ＆ 卓終了トリガー -->
+      <div class="sp-next-banner">
+        <div class="next-k-box">
+          <span class="next-k-label">次の計数完了 ➔</span>
+          <span class="next-k-num" id="nextKDisplay">K = 1位</span>
+          <span style="font-size:11px; color:#cbd5e1;" id="completedCountText">(完了 0 / 0名)</span>
+        </div>
+        <div style="font-size:10.5px; color:#fde68a; font-weight:800; white-space:nowrap;">
+          👆 氏名クリックでK・自己資本入力
+        </div>
+      </div>
+
+      <!-- 卓別フィルター ＆ 卓ごとの「終了→残り3分」ボタン -->
+      <div class="table-finish-row" id="tableFilterRow">
+        <button class="taku-filter-btn active" onclick="setTableFilter('ALL')">全卓</button>
+      </div>
+
+      <!-- 受講生カード一覧 -->
+      <div class="players-grid" id="playersGrid">
+        <div style="grid-column:1/-1; text-align:center; padding:24px; color:#94a3b8; font-size:13px;">
+          ★MG成績表★ から受講生データを読み込み中...
+        </div>
+      </div>
+
+      <div class="sp-footer">
+        <span id="lastSyncText">最終同期: --:--:--</span>
+        <a id="sheetLink" href="https://docs.google.com/spreadsheets/d/1HZ13GhSNmePg5Un_uwy50uuRBXogvc3Vwdh6bLZdQd8/edit" target="_blank" rel="noopener">
+          📄 ★MG成績表★を開く ↗
+        </a>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ========== 🏆 表彰・最終結果ダッシュボード（5期 自己資本ソート ＆ 2〜5期 計数K早い順） ========== -->
+  <div class="hyosho-dashboard" id="hyoshoDashboard">
+    <!-- 左パネル：5期 自己資本ソート（表彰対象）＆ 特別賞一覧 -->
+    <section class="hyosho-col-panel">
+      <div class="hyosho-head-bar">
+        <div class="hyosho-head-title">
+          👑 第<span id="hyoshoKaiNum">93</span>回 5期 自己資本ランキング（表彰対象）
+        </div>
+        <div style="display:flex; gap:5px; align-items:center;">
+          <button class="taku-filter-btn active" id="hfBtn-ALL" onclick="setHyoshoFilter('ALL')">全員(自己資本順)</button>
+          <button class="taku-filter-btn" id="hfBtn-PP" onclick="setHyoshoFilter('PP')" style="border-color:#fbbf24; color:#fef08a;">★表彰資格(++)のみ</button>
+          <button class="icon-btn" onclick="syncFromSheet(true)">🔄 最新同期</button>
+          <button class="icon-btn" style="background:rgba(59,130,246,0.25); border-color:#60a5fa; color:#bfdbfe;" onclick="toggleHyoshoDashboard(false)">⏱ タイマー画面へ戻る</button>
+        </div>
+      </div>
+
+      <!-- 特別賞（4A賞・3A賞・昇り竜・各期PQ区間賞）サマリー -->
+      <div class="special-awards-strip" id="specialAwardsStrip"></div>
+
+      <!-- 見出し行 -->
+      <div style="display:grid; grid-template-columns:46px minmax(95px,1.3fr) 86px 70px 100px 92px 54px; gap:6px; padding:2px 10px; font-size:11px; font-weight:900; color:#94a3b8;">
+        <span>順位</span>
+        <span>氏名（クリックで編集）</span>
+        <span>5期自己資本</span>
+        <span>来期評価</span>
+        <span>表彰判定</span>
+        <span>卓推移(3→6)</span>
+        <span>5期PQ</span>
+      </div>
+
+      <!-- 自己資本ソート一覧 -->
+      <div class="jiko-rank-list" id="jikoRankList"></div>
+    </section>
+
+    <!-- 右パネル：2期・3期・4期・5期 計数(K) 早い順一覧 -->
+    <section class="hyosho-col-panel k-panel">
+      <div class="hyosho-head-bar">
+        <div class="hyosho-head-title" style="color:#e9d5ff;">
+          ⚡ 計数（K）早い順ランキング（2期・3期・4期・5期）
+        </div>
+        <span style="font-size:11.5px; font-weight:800; color:#fde047;">🏆 各期 1位〜4位ハイライト（5期上位＝計数力賞）</span>
+      </div>
+
+      <div class="k-4cols-grid" id="k4ColsGrid"></div>
+    </section>
+  </div>
+
+  <!-- ========== 4段目：ボトム操作ドック ========== -->
+  <footer class="bottom-dock">
+    <div class="dock-group">
+      <button class="ctrl-btn btn-play" id="startPauseBtn" onclick="toggleStartPause()">
+        ▶ スタート
+      </button>
+      <button class="ctrl-btn" onclick="resetCurrentPhase()">
+        ↺ リセット
+      </button>
+      <button class="ctrl-btn" onclick="adjustSeconds(-60)">-1分</button>
+      <button class="ctrl-btn" onclick="adjustSeconds(60)">+1分</button>
+      <button class="ctrl-btn" onclick="adjustSeconds(-10)">-10秒</button>
+      <button class="ctrl-btn" onclick="adjustSeconds(10)">+10秒</button>
+    </div>
+
+    <div class="dock-group">
+      <!-- 1卓終了（A卓等）➔ 残り3分カウントダウン ＋ 裏で計数タイマー同時開始 -->
+      <button class="ctrl-btn btn-3min" onclick="triggerFirstTableFinish('A卓(先頭卓)')">
+        🔥 1卓終了 ➔ 残り3分（裏で計数スタート）
+      </button>
+      <button class="ctrl-btn btn-keisu" id="dockKeisuBtn" onclick="toggleBgKeisuOnly()">
+        📊 裏で計数スタート（後半維持）
+      </button>
+      <button class="ctrl-btn" style="border-color:#a855f7; color:#e9d5ff;" onclick="swapMainAndSubView()">
+        ⇄ 後半⇔計数 大画面入替
+      </button>
+    </div>
+  </footer>
+</div>
+
+<!-- 受講生の自己資本・来期評価・K順位・PQ編集モーダル -->
+<div class="modal-backdrop" id="editModal" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal-card" style="width:430px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+      <div class="modal-title" id="modalPlayerTitle" style="margin-bottom:0;">受講生 成績入力</div>
+      <span id="modalKStatusPill" style="font-size:12px; font-weight:900; padding:3px 9px; border-radius:6px; background:#10b981; color:#022c22;">K=1位</span>
+    </div>
+
+    <!-- 最優先入力エリア：自己資本 ＆ 来期の評価 -->
+    <div style="background:rgba(59,130,246,0.12); border:1px solid rgba(96,165,250,0.45); border-radius:10px; padding:10px 12px; margin-bottom:10px;">
+      <div class="modal-field" style="margin-bottom:10px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+          <label style="margin-bottom:0; color:#bfdbfe; font-size:13px;">💰 自己資本（数字を入力でランク自動判定）</label>
+          <span id="modalAutoRankBadge" style="font-size:11px; font-weight:900; color:#fde047;">ランク自動判定</span>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <input type="text" inputmode="numeric" id="modalJikoInput" placeholder="例: 363（赤字は -22 または △22）" oninput="onJikoInputChange()" onkeydown="if(event.key==='Enter')submitModalEdit('set')" style="font-size:20px; font-weight:900; color:#fde047; border-color:#60a5fa;">
+          <button type="button" class="ctrl-btn" onclick="toggleJikoMinus()" title="マイナス（△）を切り替え" style="padding:0 12px; font-size:16px; font-weight:900;">±△</button>
+        </div>
+      </div>
+
+      <div class="modal-field" style="margin-bottom:4px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+          <label style="margin-bottom:0; color:#fde68a; font-size:13px;">📈 来期の評価（ボタン選択 または 直接入力）</label>
+          <span style="font-size:10.5px; color:#cbd5e1;">次繰3枚以上＝＋ ／ 在庫10個以上＝＋</span>
+        </div>
+        <input type="text" id="modalHyokaInput" placeholder="例: A++ / S++ / B+- / C--" onkeydown="if(event.key==='Enter')submitModalEdit('set')" style="font-size:18px; font-weight:900; color:#34d399; text-transform:uppercase;">
+        <div class="hyoka-quick-grid">
+          <button type="button" class="hyoka-quick-btn" id="hq-pp" onclick="selectHyokaSuffix('++')">
+            <span id="hqLabel-pp">++</span>
+            <span class="hyoka-quick-sub">次繰〇・在庫〇</span>
+          </button>
+          <button type="button" class="hyoka-quick-btn" id="hq-pm" onclick="selectHyokaSuffix('+-')">
+            <span id="hqLabel-pm">+-</span>
+            <span class="hyoka-quick-sub">次繰〇・在庫×</span>
+          </button>
+          <button type="button" class="hyoka-quick-btn" id="hq-mp" onclick="selectHyokaSuffix('-+')">
+            <span id="hqLabel-mp">-+</span>
+            <span class="hyoka-quick-sub">次繰×・在庫〇</span>
+          </button>
+          <button type="button" class="hyoka-quick-btn" id="hq-mm" onclick="selectHyokaSuffix('--')">
+            <span id="hqLabel-mm">--</span>
+            <span class="hyoka-quick-sub">次繰×・在庫×</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- サブ入力エリア：K順位・売上高(PQ)・平均P -->
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:8px;">
+      <div class="modal-field" style="margin-bottom:0;">
+        <label>計数順位 (K)</label>
+        <input type="number" id="modalKInput" min="1" max="50" placeholder="例: 1" onkeydown="if(event.key==='Enter')submitModalEdit('set')">
+      </div>
+      <div class="modal-field" style="margin-bottom:0;">
+        <label>売上高 (PQ)</label>
+        <input type="number" id="modalPQInput" placeholder="例: 1322" onkeydown="if(event.key==='Enter')submitModalEdit('set')">
+      </div>
+      <div class="modal-field" style="margin-bottom:0;">
+        <label>平均単価 (平均P)</label>
+        <input type="number" id="modalHeikinInput" placeholder="例: 31" onkeydown="if(event.key==='Enter')submitModalEdit('set')">
+      </div>
+    </div>
+
+    <div class="modal-actions" style="justify-content:space-between;">
+      <button class="ctrl-btn" style="background:rgba(239,68,68,0.2); border-color:#ef4444; color:#fca5a5; padding:7px 10px; font-size:12px;" onclick="submitModalEdit('clear')">
+        🗑 Kクリア
+      </button>
+      <div style="display:flex; gap:8px;">
+        <button class="ctrl-btn" onclick="closeEditModal()">閉じる</button>
+        <button class="ctrl-btn btn-play" style="padding:7px 18px; font-size:14px;" onclick="submitModalEdit('set')">
+          💾 成績表へ保存 (Enter)
+        </button>
+      </div>
+    </div>
   </div>
 </div>
-<script>
-(function(){
-  var redirected = false;
-  var qs = location.search || "?v=11";
-  function go(url) {
-    if (redirected || !url) return;
-    redirected = true;
-    var base = url.split("?")[0].replace(/\/+$/, "");
-    var target = base + "/" + (qs.indexOf("?") === 0 ? qs : "?v=11");
-    var btn = document.getElementById("directBtn");
-    if (btn) btn.href = target;
-    location.replace(target);
-  }
 
-  // 1. Googleスプレッドシート(自分のこと MG!G4)からリアルタイム取得（待ち時間0秒・キャッシュなし）
-  window.google = {
-    visualization: {
-      Query: {
-        setResponse: function(res) {
-          try {
-            var rows = res.table.rows;
-            if (rows && rows.length > 0) {
-              var c = rows[0].c;
-              for (var i = c.length - 1; i >= 0; i--) {
-                if (c[i] && c[i].v && String(c[i].v).indexOf("https://") === 0) {
-                  go(String(c[i].v).trim());
-                  return;
-                }
-              }
-            }
-          } catch(e) {}
-        }
-      }
+<!-- 📱 iPad表示用 QRコード＆URLモーダル -->
+<div class="modal-backdrop" id="ipadModal" onclick="if(event.target===this)closeIpadQrModal()">
+  <div class="modal-card" style="width:460px; text-align:center;">
+    <div class="modal-title">📱 iPadでタイマーを表示（PCとリアルタイム同期）</div>
+    <p style="font-size:12px; color:#cbd5e1; margin-bottom:10px;">
+      iPadの標準カメラで下のQRコードを読み取ると、このタイマー画面がiPadで開き、PCと秒数・計数順位(K)がリアルタイムに連動します。
+    </p>
+    <div style="background:#fff; padding:12px; border-radius:12px; display:inline-block; margin-bottom:10px;">
+      <img id="ipadQrImg" src="/api/qr.png" alt="iPad QR Code" style="width:210px; height:210px; display:block;">
+    </div>
+    <div style="text-align:left; background:#0b1322; border:1px solid rgba(255,255,255,0.18); border-radius:8px; padding:8px 10px; font-size:12px; margin-bottom:10px;">
+      <div style="color:#94a3b8; font-weight:800; margin-bottom:3px;">🌐 どこでも繋がるURL（Wi-Fiが別でもOK・推奨）：</div>
+      <div id="ipadTunnelUrlText" style="color:#34d399; font-weight:900; word-break:break-all; user-select:text; margin-bottom:6px;">取得中...</div>
+      <div style="color:#94a3b8; font-weight:800; margin-bottom:3px;">🏠 同一Wi-Fi内URL（ローカルLAN）：</div>
+      <div id="ipadLanUrlText" style="color:#60a5fa; font-weight:900; word-break:break-all; user-select:text;">http://192.168.1.43:8095/</div>
+    </div>
+    <div class="modal-actions" style="justify-content:center;">
+      <button class="ctrl-btn" onclick="switchQrTarget('tunnel')">🌐 外部URLのQR</button>
+      <button class="ctrl-btn" onclick="switchQrTarget('lan')">🏠 LAN URLのQR</button>
+      <button class="ctrl-btn btn-play" style="padding:6px 18px; font-size:13px;" onclick="closeIpadQrModal()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // =========================================================================
+  // 1. フェーズ構成（前半11分 → 休憩2分 → 後半22分 → 計数タイム）
+  // =========================================================================
+  const PHASES = {
+    first: {
+      key: 'first',
+      name: '前半（11分）',
+      icon: '▶',
+      defaultSec: 11 * 60,
+      mode: 'countdown',
+      accent: '#10b981',
+      glow: 'rgba(16, 185, 129, 0.35)',
+      next: 'break',
+      guide: '前半 11分進行中 — 終了後、自動で「休憩 2分」へ切り替わります'
+    },
+    break: {
+      key: 'break',
+      name: '休憩（2分）',
+      icon: '☕',
+      defaultSec: 2 * 60,
+      mode: 'countdown',
+      accent: '#f59e0b',
+      glow: 'rgba(245, 158, 11, 0.35)',
+      next: 'second',
+      guide: '前半・後半の間の2分休憩中 — 終了後、自動で「後半 22分」がスタートします'
+    },
+    second: {
+      key: 'second',
+      name: '後半（22分）',
+      icon: '▶',
+      defaultSec: 22 * 60,
+      mode: 'countdown',
+      accent: '#3b82f6',
+      glow: 'rgba(59, 130, 246, 0.35)',
+      next: 'keisu',
+      guide: '後半 22分進行中 — いずれかの卓が終了したら「🔥1卓終了→残り3分」を押してください'
+    },
+    keisu: {
+      key: 'keisu',
+      name: '計数（決算）タイム',
+      icon: '📊',
+      defaultSec: 0,
+      mode: 'countup',
+      accent: '#a855f7',
+      glow: 'rgba(168, 85, 247, 0.45)',
+      next: null,
+      guide: '📊 計数（決算）タイム計測中！完了した方の氏名を右パネルでクリックすると★MG成績表★の「K」に即時記録されます'
     }
   };
-  var s = document.createElement("script");
-  s.src = "https://docs.google.com/spreadsheets/d/1-W4fuicyCAptbB-DbeezaJDWDHCMrVNEv-YNAI0I0Fg/gviz/tq?tqx=out:json&sheet=MG&range=A4:G4&_=" + Date.now();
-  document.head.appendChild(s);
 
-  // 2. バックアップとして同リポジトリの tunnel.json も並列取得
-  fetch("./tunnel.json?_=" + Date.now(), {cache: "no-store"})
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      setTimeout(function(){
-        if (!redirected && d && d.tunnel_url) go(d.tunnel_url);
-      }, 600);
-    })
-    .catch(function(){});
+  // 西研MG シニアルール（期首サイコロ出目 1〜6）定義
+  // ・出目 1,2,3：期末経費 ×1.1倍（四捨五入）／ 1市場閉鎖（仙台）
+  // ・出目 4,5,6：期末経費 ×1.2倍（四捨五入）／ 2市場閉鎖（仙台・札幌）
+  // ・大阪市場プライス：20円 ＋ サイコロの目（1→21円, 2→22円, 3→23円, 4→24円, 5→25円, 6→26円）
+  // ・第1表⑦基準単価：2期=22(全11), 3期=24(全12), 4期=26(全13), 5期=28(全14)
+  const PERIOD_BASE = {
+    2: { baseKeihi: 22, baseHonsha: 11, isSenior: false },
+    3: { baseKeihi: 24, baseHonsha: 12, isSenior: false },
+    4: { baseKeihi: 26, baseHonsha: 13, isSenior: true },
+    5: { baseKeihi: 28, baseHonsha: 14, isSenior: true },
+  };
 
-  setTimeout(function(){
-    if (!redirected) {
-      document.getElementById("fallback").style.display = "block";
-      document.getElementById("msg").textContent = "下のボタンをタップして開いてください。";
+  const SENIOR_DICE_RULES = {
+    1: { dice: 1, icon: '⚀ 1', mult: 1.1, multLabel: '1.1倍', heisaCount: 1, heisa: '1市場閉鎖（仙台）', osaka: 21 },
+    2: { dice: 2, icon: '⚁ 2', mult: 1.1, multLabel: '1.1倍', heisaCount: 1, heisa: '1市場閉鎖（仙台）', osaka: 22 },
+    3: { dice: 3, icon: '⚂ 3', mult: 1.1, multLabel: '1.1倍', heisaCount: 1, heisa: '1市場閉鎖（仙台）', osaka: 23 },
+    4: { dice: 4, icon: '⚃ 4', mult: 1.2, multLabel: '1.2倍', heisaCount: 2, heisa: '2市場閉鎖（仙台・札幌）', osaka: 24 },
+    5: { dice: 5, icon: '⚄ 5', mult: 1.2, multLabel: '1.2倍', heisaCount: 2, heisa: '2市場閉鎖（仙台・札幌）', osaka: 25 },
+    6: { dice: 6, icon: '⚅ 6', mult: 1.2, multLabel: '1.2倍', heisaCount: 2, heisa: '2市場閉鎖（仙台・札幌）', osaka: 26 },
+  };
+
+  // 状態変数
+  let currentKai = 93;
+  let currentPeriod = 4; // 初期表示はシニアルール4期（基準26円）
+  let periodDiceMap = { 2: null, 3: null, 4: 1, 5: 1 };
+  let customRuleOverride = null; // 手動微調整用
+
+  // ゲーム本編タイマー（前半11分・休憩2分・後半22分／残り3分）※計数を計測しても絶対に消えない独立保持
+  let currentPhaseKey = 'first';   // メイン巨大画面の表示対象 ('first' | 'break' | 'second' | 'keisu')
+  let gamePhaseKey = 'first';      // ゲーム本編の現在フェーズ ('first' | 'break' | 'second')
+  let isRunning = false;           // ゲーム本編カウントダウンが動作中か
+  let remainingSec = PHASES.first.defaultSec;
+  let phaseTotalSec = PHASES.first.defaultSec;
+  let phaseElapsedSec = 0;
+
+  // 先行卓終了（残り3分）＆ 裏での計数タイマー同時計測用（ゲーム本編タイマーと完全独立して同時動作）
+  let firstTableFinished = false;
+  let firstFinishedTableName = '';
+  let bgKeisuRunning = false;      // 計数タイマーが動作中か
+  let bgKeisuElapsedSec = 0;       // 先行卓終了または計数開始からの経過秒数
+  let allTablesEndElapsedSec = 0;  // 後半が00:00到達後の経過秒数
+
+  let timerInterval = null;
+  let audioCtx = null;
+  let lastSyncedSeq = 0;
+  let isApplyingRemoteSync = false;
+  let latestIpadUrls = { lan: 'http://192.168.1.43:8095/?v=11', tunnel: 'https://forestcoltd-cpu.github.io/mg-timer/' };
+  let showHyoshoDashboard = false;
+  let hyoshoFilter = 'ALL'; // 'ALL' | 'PP'
+  let activeApiBase = ''; // '' (同一オリジン) または 検出したバックエンドURL
+
+  // どのURL（https://forestcoltd-cpu.github.io/mg-timer/ または http://127.0.0.1:8095/）から開かれても、
+  // trycloudflare へページ遷移させずにそのままこの画面内で通信・動作させる！
+  function apiFetch(apiPath, options) {
+    const cleanPath = apiPath.startsWith('/') ? apiPath : ('/' + apiPath);
+    if (location.hostname.endsWith('github.io')) {
+      const base = activeApiBase || 'http://127.0.0.1:8095';
+      return fetch(base + cleanPath, options);
     }
-  }, 3500);
-})();
+    return fetch(cleanPath, options);
+  }
+
+  function resolveBackendForGithubPages() {
+    if (!location.hostname.endsWith('github.io')) return;
+    // 1) まず同じPC内の http://127.0.0.1:8095 が生きていれば最優先で直結（トンネル不要で100%確実）
+    fetch('http://127.0.0.1:8095/api/timer_sync', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(d => {
+        if (d && d.ok) {
+          activeApiBase = 'http://127.0.0.1:8095';
+          loadSessionsList();
+        }
+      })
+      .catch(() => {
+        // 2) iPad・スマホ等の外部端末の場合は Googleシート(MG!G4)または tunnel.json からバックエンドAPI接続先を裏で設定（画面遷移はしない！）
+        window.google = {
+          visualization: {
+            Query: {
+              setResponse: function(res) {
+                try {
+                  const rows = res.table.rows;
+                  if (rows && rows.length > 0) {
+                    const c = rows[0].c;
+                    for (let i = c.length - 1; i >= 0; i--) {
+                      if (c[i] && c[i].v && String(c[i].v).indexOf('https://') === 0) {
+                        const raw = String(c[i].v).trim().split('?')[0].replace(/\/+$/, '');
+                        if (!raw.includes('github.io')) {
+                          activeApiBase = raw;
+                          loadSessionsList();
+                          return;
+                        }
+                      }
+                    }
+                  }
+                } catch (e) {}
+              }
+            }
+          }
+        };
+        const s = document.createElement('script');
+        s.src = 'https://docs.google.com/spreadsheets/d/1-W4fuicyCAptbB-DbeezaJDWDHCMrVNEv-YNAI0I0Fg/gviz/tq?tqx=out:json&sheet=MG&range=A4:G4&_=' + Date.now();
+        document.head.appendChild(s);
+      });
+  }
+  resolveBackendForGithubPages();
+
+  async function pushTimerSync() {
+    if (isApplyingRemoteSync) return;
+    try {
+      const res = await apiFetch('/api/timer_sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kai: currentKai,
+          ki: currentPeriod,
+          currentPhaseKey,
+          gamePhaseKey,
+          isRunning,
+          remainingSec,
+          phaseTotalSec,
+          phaseElapsedSec,
+          firstTableFinished,
+          firstFinishedTableName,
+          bgKeisuRunning,
+          bgKeisuElapsedSec,
+          allTablesEndElapsedSec,
+          showHyoshoDashboard,
+          hyoshoFilter
+        })
+      });
+      const data = await res.json();
+      if (data.ok && data.timer && data.timer.seq) {
+        lastSyncedSeq = data.timer.seq;
+      }
+    } catch (e) {}
+  }
+
+  function applyRemoteTimerState(t) {
+    if (!t || !t.seq) return;
+    const seqChanged = t.seq > lastSyncedSeq;
+    const remDiff = Math.abs((t.remainingSec || 0) - remainingSec);
+    const keisuDiff = Math.abs((t.bgKeisuElapsedSec || 0) - bgKeisuElapsedSec);
+    if (!seqChanged && t.isRunning === isRunning && t.bgKeisuRunning === bgKeisuRunning && !!t.showHyoshoDashboard === showHyoshoDashboard && remDiff <= 2 && keisuDiff <= 2) {
+      return;
+    }
+    isApplyingRemoteSync = true;
+    lastSyncedSeq = t.seq;
+    if (t.kai && t.kai !== currentKai) {
+      currentKai = t.kai;
+      const sel = document.getElementById('kaiSelect');
+      if (sel) sel.value = String(currentKai);
+    }
+    if (t.ki && t.ki !== currentPeriod) {
+      currentPeriod = t.ki;
+      document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+      const pb = document.getElementById(`pbtn-${currentPeriod}`);
+      if (pb) pb.classList.add('active');
+      renderRuleVisuals();
+    }
+    if (typeof t.showHyoshoDashboard === 'boolean' && t.showHyoshoDashboard !== showHyoshoDashboard) {
+      showHyoshoDashboard = t.showHyoshoDashboard;
+      document.body.classList.toggle('show-hyosho', showHyoshoDashboard);
+      const hBtn = document.getElementById('hyoshoTopBtn');
+      if (hBtn) hBtn.textContent = showHyoshoDashboard ? '⏱ タイマー画面へ戻る' : '🏆 表彰・計数順画面';
+    }
+    if (t.hyoshoFilter && t.hyoshoFilter !== hyoshoFilter) {
+      hyoshoFilter = t.hyoshoFilter;
+    }
+    currentPhaseKey = t.currentPhaseKey || currentPhaseKey;
+    gamePhaseKey = t.gamePhaseKey || gamePhaseKey;
+    isRunning = !!t.isRunning;
+    remainingSec = typeof t.remainingSec === 'number' ? t.remainingSec : remainingSec;
+    phaseTotalSec = typeof t.phaseTotalSec === 'number' ? t.phaseTotalSec : phaseTotalSec;
+    phaseElapsedSec = typeof t.phaseElapsedSec === 'number' ? t.phaseElapsedSec : phaseElapsedSec;
+    firstTableFinished = !!t.firstTableFinished;
+    firstFinishedTableName = t.firstFinishedTableName || '';
+    bgKeisuRunning = !!t.bgKeisuRunning;
+    bgKeisuElapsedSec = typeof t.bgKeisuElapsedSec === 'number' ? t.bgKeisuElapsedSec : bgKeisuElapsedSec;
+    allTablesEndElapsedSec = typeof t.allTablesEndElapsedSec === 'number' ? t.allTablesEndElapsedSec : allTablesEndElapsedSec;
+    ensureMasterLoop();
+    updateTimerDisplay();
+    if (showHyoshoDashboard) renderHyoshoDashboard();
+    isApplyingRemoteSync = false;
+  }
+
+  async function pollTimerSync() {
+    try {
+      const res = await apiFetch('/api/timer_sync');
+      const data = await res.json();
+      if (data.ok) {
+        if (data.ipad_urls) latestIpadUrls = data.ipad_urls;
+        if (data.timer) applyRemoteTimerState(data.timer);
+      }
+    } catch (e) {}
+  }
+
+  function openIpadQrModal() {
+    document.getElementById('ipadModal').classList.add('open');
+    const tUrl = 'https://forestcoltd-cpu.github.io/mg-timer/';
+    const lUrl = latestIpadUrls.lan || `http://192.168.1.43:8095/?v=11`;
+    document.getElementById('ipadTunnelUrlText').textContent = tUrl;
+    document.getElementById('ipadLanUrlText').textContent = lUrl;
+    const qrTarget = tUrl;
+    const qrBase = location.hostname.endsWith('github.io') ? (activeApiBase || 'http://127.0.0.1:8095') : '';
+    document.getElementById('ipadQrImg').src = `${qrBase}/api/qr.png?url=${encodeURIComponent(qrTarget)}`;
+  }
+
+  function switchQrTarget(mode) {
+    const tUrl = 'https://forestcoltd-cpu.github.io/mg-timer/';
+    const lUrl = latestIpadUrls.lan || `http://192.168.1.43:8095/?v=11`;
+    const target = (mode === 'tunnel') ? tUrl : lUrl;
+    const qrBase = location.hostname.endsWith('github.io') ? (activeApiBase || 'http://127.0.0.1:8095') : '';
+    document.getElementById('ipadQrImg').src = `${qrBase}/api/qr.png?url=${encodeURIComponent(target)}`;
+  }
+
+  function closeIpadQrModal() {
+    document.getElementById('ipadModal').classList.remove('open');
+  }
+
+  // ★MG成績表★ 同期データ
+  let sheetState = {
+    players: [],
+    tables: ['A', 'B', 'C'],
+    next_k: 1,
+    completed_count: 0,
+    total_count: 0
+  };
+  let currentTableFilter = 'ALL';
+  let editingPlayer = null;
+
+  // =========================================================================
+  // 2. サウンド（Web Audio API チャイム・ドラ）
+  // =========================================================================
+  function getAudioCtx() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AC();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+
+  function playChime(type) {
+    try {
+      const ctx = getAudioCtx();
+      const now = ctx.currentTime;
+      const tone = (freq, start, dur, vol = 0.28, wave = 'sine') => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = wave;
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0.001, start);
+        gain.gain.exponentialRampToValueAtTime(vol, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + dur);
+      };
+      if (type === 'single') {
+        tone(880, now, 0.7, 0.28);
+      } else if (type === 'double') {
+        tone(880, now, 0.35, 0.3);
+        tone(1174.66, now + 0.26, 0.85, 0.32);
+      } else if (type === '3min') {
+        tone(783.99, now, 0.22, 0.35, 'triangle');
+        tone(987.77, now + 0.18, 0.22, 0.35, 'triangle');
+        tone(1174.66, now + 0.36, 0.75, 0.4, 'triangle');
+      } else if (type === 'gong') {
+        tone(523.25, now, 0.3, 0.38, 'triangle');
+        tone(659.25, now + 0.25, 0.3, 0.38, 'triangle');
+        tone(783.99, now + 0.5, 0.35, 0.38, 'triangle');
+        tone(1046.5, now + 0.8, 1.5, 0.45, 'sine');
+      } else if (type === 'k_done') {
+        tone(1046.5, now, 0.14, 0.22, 'sine');
+        tone(1318.5, now + 0.12, 0.35, 0.25, 'sine');
+      }
+    } catch (e) {
+      console.warn('Audio error:', e);
+    }
+  }
+
+  // =========================================================================
+  // 3. シニアルール（サイコロ出目 1〜6 → 1.1倍/1.2倍・1/2市場閉鎖・大阪20+目）描画
+  // =========================================================================
+  function getCurrentRule() {
+    if (customRuleOverride) return customRuleOverride;
+    const pInfo = PERIOD_BASE[currentPeriod] || PERIOD_BASE[4];
+
+    if (!pInfo.isSenior) {
+      // 2期（22円・全社員11円：ジュニア） / 3期（24円・全社員12円：シニア導入期・サイコロなし）
+      const ruleName = currentPeriod === 2 ? '🌱 2期 ジュニアルール' : '🎲 3期 シニアルール（サイコロは4・5期）';
+      return {
+        isJunior: true,
+        dice: null,
+        mult: 1.0,
+        multLabel: '等倍',
+        baseKeihi: pInfo.baseKeihi,
+        baseHonsha: pInfo.baseHonsha,
+        keihi: pInfo.baseKeihi,
+        honsha: pInfo.baseHonsha,
+        heisa: '閉鎖なし（全市場オープン）',
+        osaka: 24,
+        label: `${ruleName}（基準＠${pInfo.baseKeihi}円・全社員＠${pInfo.baseHonsha}円）`,
+        formulaText: `ワーカー・機械・セールス ×${pInfo.baseKeihi}円 ／ 全社員(本社)×${pInfo.baseHonsha}円`
+      };
+    }
+
+    // 4期（基準26円・全13円） / 5期（基準28円・全14円）シニアルール
+    const d = periodDiceMap[currentPeriod] || 1;
+    const r = SENIOR_DICE_RULES[d] || SENIOR_DICE_RULES[1];
+    const keihi = Math.round(pInfo.baseKeihi * r.mult);
+    const honsha = Math.round(pInfo.baseHonsha * r.mult);
+    const rawKeihi = (pInfo.baseKeihi * r.mult).toFixed(1);
+    const rawHonsha = (pInfo.baseHonsha * r.mult).toFixed(1);
+
+    const retireHalf = Math.round(keihi * 0.5);
+    const twoPersonsTotal = (keihi * 3 + honsha * 2); // 2人のとき参考(基準表の「2人のとき」80/88/96/104/112の倍率版)
+
+    return {
+      isJunior: false,
+      dice: r.dice,
+      mult: r.mult,
+      multLabel: r.multLabel,
+      baseKeihi: pInfo.baseKeihi,
+      baseHonsha: pInfo.baseHonsha,
+      keihi: keihi,
+      honsha: honsha,
+      heisa: r.heisa,
+      osaka: r.osaka,
+      label: `🎲 ${currentPeriod}期 シニアルール（出目：${r.icon} ➔ ×${r.multLabel}・四捨五入）`,
+      formulaText: `第1表L⑦：ワーカー${keihi}｜機械${keihi}｜セールス${keihi}｜全社員${honsha}×人数｜退職0.5人=${retireHalf} （${pInfo.baseKeihi}×${r.mult}=${rawKeihi}→${keihi}／${pInfo.baseHonsha}×${r.mult}=${rawHonsha}→${honsha}）`
+    };
+  }
+
+  function renderRuleVisuals() {
+    const r = getCurrentRule();
+    const ruleTag = document.getElementById('ruleModeTag');
+    if (r.isJunior) {
+      ruleTag.textContent = `🌱 ${currentPeriod}期 ジュニア（サイコロ押下で4期シニアへ）`;
+    } else {
+      ruleTag.textContent = `🎲 ${currentPeriod}期 期首サイコロ（×${r.multLabel}）`;
+    }
+
+    for (let i = 1; i <= 6; i++) {
+      const btn = document.getElementById(`dice-${i}`);
+      if (!btn) continue;
+      btn.disabled = false;
+      btn.style.opacity = r.isJunior ? '0.6' : '1';
+      btn.classList.toggle('active', !r.isJunior && r.dice === i);
+    }
+
+    document.getElementById('chipKeihi').textContent = `@${r.keihi}円`;
+    document.getElementById('chipHonsha').textContent = r.isJunior
+      ? `(全社員@${r.honsha})`
+      : `(${r.baseKeihi}×${r.mult}倍／全社員@${r.honsha})`;
+    document.getElementById('chipHeisa').textContent = r.heisa;
+    document.getElementById('chipOsaka').textContent = `${r.osaka}円`;
+
+    document.getElementById('svPeriodRuleLabel').textContent = r.label;
+    document.getElementById('svKeihiMain').textContent =
+      `期末経費 ＠${r.keihi}円 (全＠${r.honsha}円)`;
+    document.getElementById('svKeihiSub').textContent = r.formulaText;
+
+    const heisaEl = document.getElementById('svHeisaMain');
+    heisaEl.textContent = r.heisa;
+    heisaEl.style.color = r.heisa.includes('なし') ? '#34d399' : '#f87171';
+    document.getElementById('svHeisaSub').textContent = r.isJunior
+      ? `${currentPeriod}期（ジュニア）は市場閉鎖なし`
+      : `出目1・2・3＝1市場閉鎖（仙台） ／ 出目4・5・6＝2市場閉鎖（仙台・札幌）`;
+
+    document.getElementById('svOsakaMain').textContent = `大阪 ${r.osaka}円`;
+    document.getElementById('svOsakaSub').textContent = r.isJunior
+      ? 'ジュニアルール固定（24円）'
+      : `20円 ＋ サイコロの目(${r.dice}) ＝ ${r.osaka}円`;
+  }
+
+  function selectDice(num) {
+    // 2期・3期（ジュニア）表示中にサイコロが押されたら、シニアルール4期（基準26円）へ自動切替
+    if (currentPeriod === 2 || currentPeriod === 3) {
+      currentPeriod = 4;
+      document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+      const p4 = document.getElementById('pbtn-4');
+      if (p4) p4.classList.add('active');
+      syncFromSheet(false);
+    }
+    customRuleOverride = null;
+    periodDiceMap[currentPeriod] = num;
+    // 4期・5期両方に同じ出目をセットしておくと期切替時もスムーズ
+    periodDiceMap[4] = num;
+    periodDiceMap[5] = num;
+    renderRuleVisuals();
+    saveMetaToServer({ dice: { [currentPeriod]: num, 4: num, 5: num } });
+  }
+
+  function rollDiceRandom() {
+    if (currentPeriod === 2 || currentPeriod === 3) {
+      currentPeriod = 4;
+      document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+      const p4 = document.getElementById('pbtn-4');
+      if (p4) p4.classList.add('active');
+    }
+    let count = 0;
+    const iv = setInterval(() => {
+      const rand = Math.floor(Math.random() * 6) + 1;
+      periodDiceMap[currentPeriod] = rand;
+      periodDiceMap[4] = rand;
+      periodDiceMap[5] = rand;
+      customRuleOverride = null;
+      renderRuleVisuals();
+      count++;
+      if (count >= 10) {
+        clearInterval(iv);
+        playChime('double');
+        saveMetaToServer({ dice: { [currentPeriod]: periodDiceMap[currentPeriod] } });
+      }
+    }, 65);
+  }
+
+  function cycleCustomKeihi() {
+    const r = getCurrentRule();
+    const seq = [22, 24, 29, 31, 34];
+    const nextK = seq[(seq.indexOf(r.keihi) + 1) % seq.length];
+    const honMap = { 22: 11, 24: 12, 29: 14, 31: 16, 34: 17 };
+    customRuleOverride = {
+      ...r,
+      keihi: nextK,
+      honsha: honMap[nextK] || Math.round(nextK / 2),
+      formulaText: `手動切替：単価＠${nextK}円 ／ 全社員＠${honMap[nextK] || Math.round(nextK / 2)}円`
+    };
+    renderRuleVisuals();
+  }
+
+  function cycleCustomHeisa() {
+    const r = getCurrentRule();
+    const seq = ['1市場閉鎖（仙台）', '2市場閉鎖（仙台・札幌）', '閉鎖なし（全市場オープン）'];
+    const nextH = seq[(seq.indexOf(r.heisa) + 1) % seq.length];
+    customRuleOverride = { ...r, heisa: nextH };
+    renderRuleVisuals();
+  }
+
+  // =========================================================================
+  // 4. 2系統独立タイマー制御（後半カウントダウン ＆ 計数カウントアップの同時並行・消滅防止）
+  // =========================================================================
+  function formatMMSS(sec) {
+    const s = Math.max(0, Math.floor(sec));
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return `${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`;
+  }
+
+  function ensureMasterLoop() {
+    if (!timerInterval) {
+      timerInterval = setInterval(tickOneSecond, 1000);
+    }
+  }
+
+  // フェーズ切替（1:前半 / 2:休憩 / 3:後半 / 4:計数）
+  // ※計数（keisu）に切り替えても、後半（gamePhaseKey）の残り時間 remainingSec は絶対に消去しない！
+  function switchPhase(phaseKey, autoStart = false, keepBgKeisu = true) {
+    getAudioCtx();
+
+    if (phaseKey === 'first' || phaseKey === 'break' || phaseKey === 'second') {
+      const isSameGamePhase = (gamePhaseKey === phaseKey && remainingSec > 0 && remainingSec < PHASES[phaseKey].defaultSec);
+      gamePhaseKey = phaseKey;
+      currentPhaseKey = phaseKey;
+
+      if (!isSameGamePhase) {
+        isRunning = false;
+        remainingSec = PHASES[phaseKey].defaultSec;
+        phaseTotalSec = PHASES[phaseKey].defaultSec;
+        phaseElapsedSec = 0;
+        firstTableFinished = false;
+        firstFinishedTableName = '';
+      }
+
+      if (!keepBgKeisu) {
+        bgKeisuRunning = false;
+        bgKeisuElapsedSec = 0;
+        allTablesEndElapsedSec = 0;
+      }
+
+      if (autoStart) {
+        isRunning = true;
+      }
+    } else if (phaseKey === 'keisu') {
+      // 計数を大画面に表示（ただし裏の後半タイマー remainingSec は絶対に0にせずそのまま維持！）
+      currentPhaseKey = 'keisu';
+      if (!bgKeisuRunning && autoStart) {
+        bgKeisuRunning = true;
+      }
+    }
+
+    ensureMasterLoop();
+    updateTimerDisplay();
+    pushTimerSync();
+  }
+
+  // 上部ステップバーの「4 計数(決算)」をクリックした時の動作：
+  // ・まだ後半（または前半）の時間が残っている場合は、後半タイマーをメイン画面に残したまま「裏（小表示）」で計数計測をスタート！
+  // ・すでに裏で計数計測中なら、クリックで「メイン画面（大）⇔ サブ画面（小）」の表示を入れ替える（後半タイマーはサブ画面に残る）
+  function onClickKeisuStep() {
+    getAudioCtx();
+    if (remainingSec > 0) {
+      // もし前半初期状態(11:00未開始)で押された場合は後半(22:00)へセット
+      if (gamePhaseKey === 'first' && remainingSec === PHASES.first.defaultSec && !isRunning) {
+        gamePhaseKey = 'second';
+        currentPhaseKey = 'second';
+        remainingSec = PHASES.second.defaultSec;
+        phaseTotalSec = PHASES.second.defaultSec;
+      }
+      if (!bgKeisuRunning) {
+        bgKeisuRunning = true;
+        // 後半タイマーも止まっていれば同時に動かす
+        if (!isRunning) isRunning = true;
+        currentPhaseKey = gamePhaseKey; // メインは後半タイマーを維持し、サブ枠で計数を計測！
+        playChime('single');
+      } else {
+        // 既に計数が動いている場合は、メイン大画面とサブ小画面の表示を入替（どちらも消えない）
+        currentPhaseKey = (currentPhaseKey === 'keisu') ? gamePhaseKey : 'keisu';
+      }
+    } else {
+      // 後半が00:00終了済みの場合は計数をメイン大画面で表示・開始
+      currentPhaseKey = 'keisu';
+      bgKeisuRunning = true;
+    }
+    ensureMasterLoop();
+    updateTimerDisplay();
+    pushTimerSync();
+  }
+
+  // 裏（サブ枠）で計数タイマーのみスタート／一時停止（メインの後半タイマーは一切消さない）
+  function toggleBgKeisuOnly() {
+    getAudioCtx();
+    bgKeisuRunning = !bgKeisuRunning;
+    if (bgKeisuRunning) {
+      playChime('single');
+      // 後半が残っているならメイン画面は後半のまま維持
+      if (remainingSec > 0 && currentPhaseKey === 'keisu') {
+        currentPhaseKey = gamePhaseKey;
+      }
+    }
+    ensureMasterLoop();
+    updateTimerDisplay();
+    pushTimerSync();
+  }
+
+  function resetBgKeisuOnly() {
+    bgKeisuRunning = false;
+    bgKeisuElapsedSec = 0;
+    allTablesEndElapsedSec = 0;
+    if (currentPhaseKey === 'keisu' && remainingSec > 0) {
+      currentPhaseKey = gamePhaseKey;
+    }
+    updateTimerDisplay();
+    pushTimerSync();
+  }
+
+  // 後半タイマーと計数タイマーの「大画面（メイン）⇔ 小画面（サブ）」表示入替（どちらも止まらず消えない）
+  function swapMainAndSubView() {
+    if (currentPhaseKey === 'keisu') {
+      // 後半が00:00だった場合でも、後半画面に戻したい時は後半(22分または残り時間)を表示
+      if (remainingSec <= 0) {
+        gamePhaseKey = 'second';
+        remainingSec = PHASES.second.defaultSec;
+        phaseTotalSec = PHASES.second.defaultSec;
+      }
+      currentPhaseKey = gamePhaseKey;
+    } else {
+      currentPhaseKey = 'keisu';
+      if (!bgKeisuRunning) bgKeisuRunning = true;
+    }
+    ensureMasterLoop();
+    updateTimerDisplay();
+    pushTimerSync();
+  }
+
+  function startTimer() {
+    getAudioCtx();
+    if (currentPhaseKey === 'keisu') {
+      bgKeisuRunning = true;
+    } else {
+      isRunning = true;
+    }
+    ensureMasterLoop();
+    updateTimerDisplay();
+    pushTimerSync();
+  }
+
+  function pauseTimer() {
+    if (currentPhaseKey === 'keisu') {
+      bgKeisuRunning = false;
+    } else {
+      isRunning = false;
+    }
+    updateTimerDisplay();
+    pushTimerSync();
+  }
+
+  function toggleStartPause() {
+    getAudioCtx();
+    if (currentPhaseKey === 'keisu') {
+      bgKeisuRunning = !bgKeisuRunning;
+    } else {
+      isRunning = !isRunning;
+    }
+    ensureMasterLoop();
+    updateTimerDisplay();
+    pushTimerSync();
+  }
+
+  function resetCurrentPhase() {
+    if (currentPhaseKey === 'keisu') {
+      bgKeisuRunning = false;
+      bgKeisuElapsedSec = 0;
+      allTablesEndElapsedSec = 0;
+      updateTimerDisplay();
+    } else {
+      isRunning = false;
+      firstTableFinished = false;
+      firstFinishedTableName = '';
+      remainingSec = PHASES[gamePhaseKey].defaultSec;
+      phaseTotalSec = PHASES[gamePhaseKey].defaultSec;
+      phaseElapsedSec = 0;
+      updateTimerDisplay();
+    }
+    pushTimerSync();
+  }
+
+  function adjustSeconds(delta) {
+    if (currentPhaseKey === 'keisu') {
+      bgKeisuElapsedSec = Math.max(0, bgKeisuElapsedSec + delta);
+    } else {
+      remainingSec = Math.max(0, remainingSec + delta);
+      if (remainingSec > phaseTotalSec) phaseTotalSec = remainingSec;
+    }
+    updateTimerDisplay();
+    pushTimerSync();
+  }
+
+  // 🔥 「1卓（A卓等）終了 ➔ 残り3分」＋ 裏での計数タイマー同時スタート！
+  function triggerFirstTableFinish(tableName = '先頭卓') {
+    getAudioCtx();
+    playChime('3min');
+
+    gamePhaseKey = 'second';
+    currentPhaseKey = 'second'; // メイン画面は「残り3分カウントダウン」を大きく表示！
+
+    firstTableFinished = true;
+    firstFinishedTableName = tableName;
+    remainingSec = 3 * 60;
+    phaseTotalSec = 3 * 60;
+    isRunning = true;
+
+    // まだ裏の計数タイマーが動いていなければ 00:00 から同時スタート！
+    if (!bgKeisuRunning) {
+      bgKeisuRunning = true;
+      bgKeisuElapsedSec = 0;
+      allTablesEndElapsedSec = 0;
+    }
+
+    ensureMasterLoop();
+    updateTimerDisplay();
+    pushTimerSync();
+  }
+
+  // 全卓終了 ➔ 計数タイマーを巨大メイン画面へ昇格（後半タイマーがまだ残っていればサブ枠に保持）
+  function promoteToKeisuPhaseNow() {
+    getAudioCtx();
+    playChime('gong');
+    if (!bgKeisuRunning) {
+      bgKeisuRunning = true;
+    }
+    currentPhaseKey = 'keisu';
+    ensureMasterLoop();
+    updateTimerDisplay();
+    pushTimerSync();
+  }
+
+  function tickOneSecond() {
+    let changed = false;
+
+    // 1) 裏（またはメイン）の計数タイマーが稼働中なら毎秒カウントアップ
+    if (bgKeisuRunning) {
+      bgKeisuElapsedSec++;
+      if (gamePhaseKey === 'second' && remainingSec <= 0) {
+        allTablesEndElapsedSec++;
+      }
+      changed = true;
+    }
+
+    // 2) ゲーム本編（前半・休憩・後半・残り3分）が稼働中なら毎秒カウントダウン（計数画面表示中でも裏で止まらない！）
+    if (isRunning && remainingSec > 0) {
+      remainingSec--;
+      phaseElapsedSec++;
+      changed = true;
+
+      if (remainingSec === 180 && !firstTableFinished) {
+        playChime('single');
+      } else if (remainingSec === 60) {
+        playChime('single');
+      }
+
+      if (remainingSec <= 0) {
+        onCountdownReachedZero();
+        return;
+      }
+    }
+
+    if (changed) {
+      updateTimerDisplay();
+    }
+  }
+
+  function onCountdownReachedZero() {
+    const autoRelay = document.getElementById('autoRelayToggle').checked;
+    if (gamePhaseKey === 'first') {
+      playChime('double');
+      if (autoRelay) {
+        gamePhaseKey = 'break';
+        currentPhaseKey = 'break';
+        remainingSec = PHASES.break.defaultSec;
+        phaseTotalSec = PHASES.break.defaultSec;
+        phaseElapsedSec = 0;
+        isRunning = true;
+      } else {
+        isRunning = false;
+      }
+    } else if (gamePhaseKey === 'break') {
+      playChime('double');
+      if (autoRelay) {
+        gamePhaseKey = 'second';
+        currentPhaseKey = 'second';
+        remainingSec = PHASES.second.defaultSec;
+        phaseTotalSec = PHASES.second.defaultSec;
+        phaseElapsedSec = 0;
+        isRunning = true;
+      } else {
+        isRunning = false;
+      }
+    } else if (gamePhaseKey === 'second') {
+      // 🎉 後半（または1卓終了からの残り3分）が 00:00 に到達！
+      // 裏で回っていた計数タイマーをそのまま巨大メイン画面へ自動昇格！
+      playChime('gong');
+      isRunning = false;
+      remainingSec = 0;
+      if (!bgKeisuRunning) {
+        bgKeisuRunning = true;
+        bgKeisuElapsedSec = 0;
+      }
+      allTablesEndElapsedSec = 0;
+      if (autoRelay) {
+        currentPhaseKey = 'keisu';
+      }
+    }
+    updateTimerDisplay();
+  }
+
+  function getActiveKeisuTimeString() {
+    return formatMMSS(bgKeisuElapsedSec);
+  }
+
+  function updateTimerDisplay() {
+    const digitsEl = document.getElementById('timerDigits');
+    const iconEl = document.getElementById('phaseIcon');
+    const titleEl = document.getElementById('phaseTitleText');
+    const guideEl = document.getElementById('messageGuide');
+    const progEl = document.getElementById('progressBar');
+    const bgCard = document.getElementById('bgKeisuCard');
+    const bgLabel = document.getElementById('bgKeisuLabel');
+    const bgSub = document.getElementById('bgKeisuSub');
+    const bgTime = document.getElementById('bgKeisuTime');
+    const subBtns = document.getElementById('subCardButtons');
+    const dockKeisuBtn = document.getElementById('dockKeisuBtn');
+    const stepKeisuDur = document.getElementById('stepKeisuDur');
+
+    // 上部ステップバーのアクティブ＆同時計測ハイライト更新
+    const order = ['first', 'break', 'second', 'keisu'];
+    const gameIdx = order.indexOf(gamePhaseKey);
+    order.forEach((k, idx) => {
+      const el = document.getElementById(`step-${k}`);
+      if (!el) return;
+      el.classList.remove('active', 'done', 'dual-running');
+      if (k === currentPhaseKey) {
+        el.classList.add('active');
+      } else if (k === gamePhaseKey && remainingSec > 0) {
+        el.classList.add('active');
+      } else if (idx < gameIdx) {
+        el.classList.add('done');
+      }
+      if (k === 'keisu' && (bgKeisuRunning || bgKeisuElapsedSec > 0)) {
+        el.classList.add('dual-running');
+      }
+    });
+
+    if (stepKeisuDur) {
+      stepKeisuDur.textContent = (bgKeisuRunning || bgKeisuElapsedSec > 0)
+        ? `${formatMMSS(bgKeisuElapsedSec)}`
+        : '決算計測';
+    }
+
+    if (dockKeisuBtn) {
+      dockKeisuBtn.textContent = bgKeisuRunning
+        ? `⏸ 裏の計数を一時停止 (${formatMMSS(bgKeisuElapsedSec)})`
+        : `📊 裏で計数スタート（後半維持）`;
+    }
+
+    // スタート／一時停止ボタンとステータスバッジ（現在のメイン画面対象に連動）
+    const activeMainRunning = (currentPhaseKey === 'keisu') ? bgKeisuRunning : isRunning;
+    const startBtn = document.getElementById('startPauseBtn');
+    const sb = document.getElementById('statusBadge');
+    if (activeMainRunning) {
+      startBtn.textContent = '⏸ 一時停止';
+      startBtn.classList.add('is-running');
+      sb.textContent = '● 計測中';
+      sb.classList.add('running');
+    } else {
+      startBtn.textContent = '▶ スタート';
+      startBtn.classList.remove('is-running');
+      sb.textContent = '⏸ 待機/一時停止';
+      sb.classList.remove('running');
+    }
+
+    digitsEl.classList.remove('warn-color', 'danger-color', 'keisu-color');
+    bgCard.classList.remove('inactive', 'game-sub-mode');
+
+    if (currentPhaseKey !== 'keisu') {
+      // =========================================================
+      // メイン巨大画面：ゲームタイマー（前半11分 / 休憩2分 / 後半22分・残り3分）
+      // サブカード（下）：📊 裏・計数（決算）タイマー（小さく同時表示！）
+      // =========================================================
+      const p = PHASES[gamePhaseKey];
+      const accentCol = firstTableFinished ? '#ef4444' : p.accent;
+      const glowCol = firstTableFinished ? 'rgba(239, 68, 68, 0.5)' : p.glow;
+      document.documentElement.style.setProperty('--accent', accentCol);
+      document.documentElement.style.setProperty('--accent-glow', glowCol);
+
+      digitsEl.textContent = formatMMSS(remainingSec);
+
+      if (firstTableFinished) {
+        iconEl.textContent = '🔥';
+        titleEl.textContent = `${firstFinishedTableName}終了！後半 残り3分カウントダウン`;
+        guideEl.textContent = `🚨 ${firstFinishedTableName}が終了！他卓は残り3分です — 下の紫枠で「計数（決算）タイム ${formatMMSS(bgKeisuElapsedSec)}」を同時計測中（00:00で巨大画面へ昇格）`;
+      } else {
+        iconEl.textContent = p.icon;
+        titleEl.textContent = p.name;
+        guideEl.textContent = bgKeisuRunning
+          ? `⏱ ${p.name}進行中 ＋ 下の紫枠で「📊 計数タイム (${formatMMSS(bgKeisuElapsedSec)})」を同時計測中！（ゲーム00:00終了で計数が大画面へ昇格します）`
+          : p.guide;
+      }
+
+      if (remainingSec <= 60) {
+        digitsEl.classList.add('danger-color');
+      } else if (remainingSec <= 180) {
+        digitsEl.classList.add('warn-color');
+      }
+
+      const pct = phaseTotalSec > 0 ? (remainingSec / phaseTotalSec) * 100 : 0;
+      progEl.style.width = `${Math.max(0, Math.min(100, pct))}%`;
+
+      // サブカードに「📊 裏・計数（決算）タイマー」を表示
+      bgTime.textContent = formatMMSS(bgKeisuElapsedSec);
+      if (bgKeisuRunning || bgKeisuElapsedSec > 0) {
+        bgLabel.textContent = bgKeisuRunning
+          ? `📊 計数（決算）タイマー［同時計測中！］${firstFinishedTableName ? '（' + firstFinishedTableName + '終了から）' : ''}`
+          : `📊 計数（決算）タイマー［一時停止中］`;
+        bgSub.textContent = '上のゲーム残り時間が 00:00 になると、自動的にこの計数タイマーが中央の巨大画面へ昇格します';
+        subBtns.innerHTML = `
+          <button class="sub-mini-btn" onclick="toggleBgKeisuOnly()">${bgKeisuRunning ? '⏸ 計数停止' : '▶ 計数再開'}</button>
+          <button class="sub-mini-btn" onclick="resetBgKeisuOnly()">↺ 00:00</button>
+          <button class="sub-mini-btn" style="background:rgba(168,85,247,0.45); border-color:#d8b4fe;" onclick="swapMainAndSubView()">⬆ 計数を大画面へ</button>
+        `;
+      } else {
+        bgCard.classList.add('inactive');
+        bgLabel.textContent = '📊 裏・計数（決算）タイマー（待機中）';
+        bgSub.textContent = '「🔥1卓終了→残り3分」または右の「▶計数スタート」で、後半タイマーを消さずに裏（この枠）で計数を計測します';
+        subBtns.innerHTML = `
+          <button class="sub-mini-btn" style="background:rgba(168,85,247,0.4); border-color:#d8b4fe;" onclick="toggleBgKeisuOnly()">▶ 計数スタート(小表示)</button>
+          <button class="sub-mini-btn" onclick="triggerFirstTableFinish('先頭卓')">🔥 残3分＋計数開始</button>
+        `;
+      }
+    } else {
+      // =========================================================
+      // メイン巨大画面：📊 計数（決算）タイム（カウントアップ）
+      // サブカード（下）：⏱ 後半タイマー（残っていれば絶対に消さずにそのまま表示＆カウントダウン継続！）
+      // =========================================================
+      document.documentElement.style.setProperty('--accent', PHASES.keisu.accent);
+      document.documentElement.style.setProperty('--accent-glow', PHASES.keisu.glow);
+
+      digitsEl.textContent = formatMMSS(bgKeisuElapsedSec);
+      digitsEl.classList.add('keisu-color');
+      iconEl.textContent = '📊';
+
+      if (remainingSec > 0) {
+        // まだ後半（または前半）の時間が残っている状態で計数を大画面表示している場合
+        const gpName = firstTableFinished ? `${firstFinishedTableName}終了・残り3分` : PHASES[gamePhaseKey].name;
+        titleEl.textContent = `計数（決算）タイム（下の青枠で ${gpName} も同時進行中）`;
+        guideEl.textContent = `📊 計数タイム大画面表示中！下の青枠に「${gpName}（残り ${formatMMSS(remainingSec)}）」を保持しています（消えていません）`;
+        progEl.style.width = `${phaseTotalSec > 0 ? Math.max(0, Math.min(100, (remainingSec / phaseTotalSec) * 100)) : 100}%`;
+
+        bgCard.classList.add('game-sub-mode');
+        bgLabel.textContent = `⏱ ${gpName} タイマー（${isRunning ? '裏でカウントダウン中！' : '一時停止中'}）`;
+        bgSub.textContent = '後半タイマーは消えずにここで動いています。「⬆後半を大画面に戻す」でいつでも元の画面に戻せます';
+        bgTime.textContent = formatMMSS(remainingSec);
+        subBtns.innerHTML = `
+          <button class="sub-mini-btn" style="background:rgba(59,130,246,0.55); border-color:#93c5fd;" onclick="swapMainAndSubView()">⬆ 後半タイマーを大画面に戻す</button>
+          <button class="sub-mini-btn" onclick="isRunning=!isRunning; updateTimerDisplay();">${isRunning ? '⏸ 後半停止' : '▶ 後半再開'}</button>
+          <button class="sub-mini-btn" style="background:rgba(239,68,68,0.4); border-color:#fca5a5;" onclick="triggerFirstTableFinish('先頭卓')">🔥 残り3分にする</button>
+        `;
+      } else {
+        // 後半が 00:00 で完全終了した後の計数メイン画面
+        titleEl.textContent = firstTableFinished && firstFinishedTableName
+          ? `計数（決算）タイム（${firstFinishedTableName}終了から計測 ／ 全卓終了）`
+          : '計数（決算）タイム（経過時間）';
+        guideEl.textContent = `📊 全卓ゲーム終了！（全卓終了から +${formatMMSS(allTablesEndElapsedSec)}）右パネルの氏名クリックで★MG成績表★のK順位を記録`;
+        progEl.style.width = '100%';
+
+        bgCard.classList.add('game-sub-mode');
+        bgLabel.textContent = `✅ 後半ゲーム終了（00:00）— 全卓終了から +${formatMMSS(allTablesEndElapsedSec)} 経過`;
+        bgSub.textContent = '誤って計数画面にした場合は「↺ 後半22分に戻す」または「🔥 残り3分に戻す」を押してください';
+        bgTime.textContent = '00:00';
+        subBtns.innerHTML = `
+          <button class="sub-mini-btn" style="background:rgba(59,130,246,0.45); border-color:#93c5fd;" onclick="switchPhase('second', false, true)">↺ 後半22分を大画面に戻す</button>
+          <button class="sub-mini-btn" style="background:rgba(239,68,68,0.4); border-color:#fca5a5;" onclick="triggerFirstTableFinish('先頭卓')">🔥 残り3分に戻す</button>
+        `;
+      }
+    }
+
+    // 右下のピル表示更新（後半残り時間 ＆ 計数経過時間を常時並列表示）
+    document.getElementById('totalGameRemain').textContent = formatMMSS(remainingSec);
+    document.getElementById('phaseElapsed').textContent = formatMMSS(bgKeisuElapsedSec);
+  }
+
+  // =========================================================================
+  // 5. 『★MG成績表★』計数順位（K）リアルタイム双方向リンク
+  // =========================================================================
+  async function loadSessionsList() {
+    try {
+      const res = await apiFetch('/api/sessions');
+      const data = await res.json();
+      if (data.ok && data.sessions && data.sessions.length > 0) {
+        const sel = document.getElementById('kaiSelect');
+        sel.innerHTML = data.sessions.map(k => `<option value="${k}">第${k}回 MG</option>`).join('');
+        currentKai = data.default_kai || data.sessions[0];
+        sel.value = String(currentKai);
+      }
+    } catch (e) {
+      console.warn('Sessions load error:', e);
+    }
+    await syncFromSheet(true);
+  }
+
+  function onChangeKai() {
+    const sel = document.getElementById('kaiSelect');
+    currentKai = parseInt(sel.value, 10) || 93;
+    syncFromSheet(true);
+    pushTimerSync();
+  }
+
+  function selectPeriod(ki, btnEl) {
+    currentPeriod = ki;
+    customRuleOverride = null;
+    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+    renderRuleVisuals();
+    syncFromSheet(true);
+    pushTimerSync();
+  }
+
+  async function syncFromSheet(force = false) {
+    const dot = document.getElementById('syncDot');
+    if (dot) dot.className = 'sync-dot syncing';
+    try {
+      const res = await apiFetch(`/api/state?kai=${currentKai}&ki=${currentPeriod}&force=${force ? '1' : '0'}&v=11`);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Sync failed');
+      if (data.app_version && data.app_version !== '11' && !location.hostname.endsWith('github.io')) {
+        location.replace('/?v=' + data.app_version);
+        return;
+      }
+      if (data.ipad_urls) latestIpadUrls = data.ipad_urls;
+      if (data.timer) applyRemoteTimerState(data.timer);
+      sheetState = data;
+
+      if (data.dice) {
+        for (const [k, v] of Object.entries(data.dice)) {
+          if (v) periodDiceMap[parseInt(k, 10)] = parseInt(v, 10);
+        }
+        renderRuleVisuals();
+      }
+
+      renderSeisekiPanel();
+      if (showHyoshoDashboard) renderHyoshoDashboard();
+      if (dot) dot.className = 'sync-dot';
+      document.getElementById('lastSyncText').textContent = `最終同期: ${data.updated_at || '--:--:--'} (${data.tab} ${currentPeriod}期K=${data.k_col_letter}列)`;
+    } catch (e) {
+      console.warn('Sheet sync error:', e);
+      if (dot) dot.className = 'sync-dot error';
+    }
+  }
+
+  function renderSeisekiPanel() {
+    document.getElementById('spHeaderTitle').textContent =
+      `★MG成績表★ 第${currentKai}回・${currentPeriod}期 計数(K)`;
+    document.getElementById('nextKDisplay').textContent = `K = ${sheetState.next_k}位`;
+    const absList = (sheetState.absent_players || []).map(a => a.name).join('・');
+    const absNote = absList ? ` ／ 欠席:${absList}` : '';
+    document.getElementById('completedCountText').textContent =
+      `(${sheetState.completed_count}/${sheetState.total_count}名${absNote})`;
+
+    // 卓フィルターボタン ＋ 自己資本順・K早い順ソート ＋ 各卓「🔥◯卓終了→残3分」ボタン
+    const filterRow = document.getElementById('tableFilterRow');
+    const tables = sheetState.tables || ['A', 'B', 'C'];
+    let fHtml = `<button class="taku-filter-btn ${currentTableFilter === 'ALL' ? 'active' : ''}" onclick="setTableFilter('ALL')">全卓(${sheetState.total_count})</button>`;
+    tables.forEach(t => {
+      const cnt = (sheetState.players || []).filter(p => p.table === t).length;
+      fHtml += `<button class="taku-filter-btn ${currentTableFilter === t ? 'active' : ''}" onclick="setTableFilter('${t}')">${t}卓(${cnt})</button>`;
+    });
+    fHtml += `<button class="taku-filter-btn ${currentTableFilter === 'SORT_JIKO' ? 'active' : ''}" style="border-color:#fbbf24; color:#fef08a;" onclick="setTableFilter('SORT_JIKO')">👑5期自己資本順</button>`;
+    fHtml += `<button class="taku-filter-btn ${currentTableFilter === 'SORT_K' ? 'active' : ''}" style="border-color:#c084fc; color:#f3e8ff;" onclick="setTableFilter('SORT_K')">⚡${currentPeriod}期K早い順</button>`;
+    tables.forEach(t => {
+      fHtml += `<button class="taku-filter-btn" style="background:rgba(239,68,68,0.18); border-color:rgba(239,68,68,0.5); color:#fecaca;" onclick="triggerFirstTableFinish('${t}卓')" title="${t}卓が最初にゲーム終了：残り3分＋裏で計数スタート">🔥${t}卓終了→3分</button>`;
+    });
+    filterRow.innerHTML = fHtml;
+
+    // 受講生カード一覧
+    const grid = document.getElementById('playersGrid');
+    let list = [...(sheetState.players || [])];
+    if (currentTableFilter !== 'ALL' && currentTableFilter !== 'SORT_JIKO' && currentTableFilter !== 'SORT_K') {
+      list = list.filter(p => p.table === currentTableFilter);
+    }
+
+    if (currentTableFilter === 'SORT_JIKO') {
+      list.sort((a, b) => {
+        const ja = (a.jiko_5ki !== null && a.jiko_5ki !== undefined) ? Number(a.jiko_5ki) : -999999;
+        const jb = (b.jiko_5ki !== null && b.jiko_5ki !== undefined) ? Number(b.jiko_5ki) : -999999;
+        if (jb !== ja) return jb - ja;
+        const ka = a.k !== null && a.k !== undefined ? Number(a.k) : 999;
+        const kb = b.k !== null && b.k !== undefined ? Number(b.k) : 999;
+        return ka - kb;
+      });
+    } else if (currentTableFilter === 'SORT_K') {
+      list.sort((a, b) => {
+        const ka = a.k !== null && a.k !== undefined ? Number(a.k) : 999;
+        const kb = b.k !== null && b.k !== undefined ? Number(b.k) : 999;
+        if (ka !== kb) return ka - kb;
+        return a.row - b.row;
+      });
+    } else {
+      // ソート：卓順 → 行番号順
+      list.sort((a, b) => {
+        if (a.table !== b.table) return a.table.localeCompare(b.table);
+        return a.row - b.row;
+      });
+    }
+
+    if (list.length === 0) {
+      grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:18px; color:#94a3b8;">該当する受講生がいません</div>`;
+      return;
+    }
+
+    grid.innerHTML = list.map((p, idx) => {
+      const hasK = p.k !== null && p.k !== undefined;
+      const isTop4 = hasK && p.k <= 4;
+      const cardCls = hasK ? (isTop4 ? 'player-card done-k top4-k' : 'player-card done-k') : 'player-card';
+      const kLabel = hasK ? (p.k <= 4 ? `🏆 K=${p.k}` : `K=${p.k}`) : '未完了';
+      const pqText = (p.pq !== null && p.pq !== undefined) ? `PQ:${p.pq}` : 'PQ未';
+      const jikoVal = (p.jiko !== null && p.jiko !== undefined && String(p.jiko) !== '') ? p.jiko : p.jiko_5ki;
+      const hyokaVal = p.hyoka || p.hyoka_5ki || '';
+      const hasJiko = jikoVal !== null && jikoVal !== undefined && String(jikoVal) !== '';
+      const jikoStr = hasJiko ? (Number(jikoVal) < 0 ? `△${Math.abs(Number(jikoVal))}` : `${jikoVal}`) : '';
+      const jikoBadge = hasJiko ? `<span class="jiko-pill">自己:${jikoStr}</span>` : '';
+      const hyokaBadge = hyokaVal ? `<span class="hyoka-pill">${escapeHtml(hyokaVal)}</span>` : '';
+      const timeText = (!hasJiko && p.elapsed_str) ? `⏱${p.elapsed_str}` : '';
+
+      const dispName = p.display_name || p.name;
+      const rankPrefix = (currentTableFilter === 'SORT_JIKO' && hasJiko) ? `${idx + 1}位 ` : '';
+
+      return `
+        <div class="${cardCls}" onclick="onClickPlayerCard(${p.row})" title="${escapeHtml(p.name)} (${p.table}卓 / ${pqText}${hasJiko ? ' / 自己資本:' + jikoStr : ''}${hyokaVal ? ' / 来期:' + hyokaVal : ''}) — クリックで自己資本・来期評価・K編集">
+          <div class="pc-top-line">
+            <span class="taku-tag t-${p.table}">${p.table}卓</span>
+            <span class="pc-name">${rankPrefix ? `<strong style="color:#fde047;">${rankPrefix}</strong>` : ''}${escapeHtml(dispName)}</span>
+          </div>
+          <div class="pc-bottom-line">
+            <span class="pc-sub"><span>${pqText}</span>${jikoBadge}${hyokaBadge}${timeText ? `<span>${timeText}</span>` : ''}</span>
+            <span class="k-badge">${kLabel}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function setTableFilter(tbl) {
+    currentTableFilter = tbl;
+    renderSeisekiPanel();
+  }
+
+  function toggleHyoshoDashboard(forceState) {
+    showHyoshoDashboard = typeof forceState === 'boolean' ? forceState : !showHyoshoDashboard;
+    document.body.classList.toggle('show-hyosho', showHyoshoDashboard);
+    const hBtn = document.getElementById('hyoshoTopBtn');
+    if (hBtn) {
+      hBtn.textContent = showHyoshoDashboard ? '⏱ タイマー画面へ戻る' : '🏆 表彰・計数順画面';
+    }
+    if (showHyoshoDashboard) {
+      renderHyoshoDashboard();
+    }
+    pushTimerSync();
+  }
+
+  function setHyoshoFilter(mode) {
+    hyoshoFilter = mode;
+    document.getElementById('hfBtn-ALL').classList.toggle('active', mode === 'ALL');
+    document.getElementById('hfBtn-PP').classList.toggle('active', mode === 'PP');
+    renderHyoshoDashboard();
+    pushTimerSync();
+  }
+
+  function formatPlayerNameForKi(rawName, kiNum) {
+    const s = String(rawName || '').trim();
+    if (s.includes('永井') && s.includes('髙橋')) {
+      return (kiNum === 2 || kiNum === 3) ? '永井実咲(1日目)' : '髙橋佳江(2日目)';
+    }
+    return s;
+  }
+
+  function renderHyoshoDashboard() {
+    const kaiEl = document.getElementById('hyoshoKaiNum');
+    if (kaiEl) kaiEl.textContent = String(currentKai);
+    document.getElementById('hfBtn-ALL').classList.toggle('active', hyoshoFilter === 'ALL');
+    document.getElementById('hfBtn-PP').classList.toggle('active', hyoshoFilter === 'PP');
+
+    const activePlayers = [...(sheetState.players || [])];
+    const allPlayersWithAbsent = [...activePlayers, ...(sheetState.absent_players || [])];
+
+    // 1. 特別賞（4A賞・3A賞・昇り竜・各期PQ区間賞）の算出
+    const award4A = [];
+    const award3A = [];
+    const awardNobori = [];
+
+    activePlayers.forEach(p => {
+      const th = p.taku_history || {};
+      const t3 = th['3'] || '';
+      const t4 = th['4'] || '';
+      const t5 = th['5'] || '';
+      const t6 = th['6'] || '';
+      const nm = formatPlayerNameForKi(p.name, 5);
+      if (t3 === 'A' && t4 === 'A' && t5 === 'A' && t6 === 'A') {
+        award4A.push(nm);
+      } else if (t4 === 'A' && t5 === 'A' && t6 === 'A' && t3 && t3 !== 'A') {
+        award3A.push(`${nm}(${t3}→A)`);
+      }
+      if (t3 && t4 && t5 && t6 && t4 < t3 && t5 < t4 && t6 < t5) {
+        awardNobori.push(`${nm}(${t3}→${t4}→${t5}→${t6})`);
+      }
+    });
+
+    // 各期PQトップ（区間賞）
+    const kukanList = [2, 3, 4, 5].map(kiN => {
+      let maxPq = -1;
+      let winners = [];
+      allPlayersWithAbsent.forEach(p => {
+        const pqv = p.pq_history ? p.pq_history[String(kiN)] : null;
+        if (pqv !== null && pqv !== undefined && Number(pqv) > 0) {
+          const v = Number(pqv);
+          const nm = formatPlayerNameForKi(p.name, kiN);
+          if (v > maxPq) {
+            maxPq = v;
+            winners = [nm];
+          } else if (v === maxPq) {
+            winners.push(nm);
+          }
+        }
+      });
+      return maxPq > 0 ? `${kiN}期:${winners.join('・')}(${maxPq})` : `${kiN}期:-`;
+    });
+
+    const spStrip = document.getElementById('specialAwardsStrip');
+    if (spStrip) {
+      spStrip.innerHTML = `
+        <div class="sp-award-box">
+          <div class="sp-award-title">🎖 4A賞（3〜6卓すべてA卓）</div>
+          <div class="sp-award-names">${award4A.length ? award4A.map(escapeHtml).join(' ／ ') : '<span style="color:#64748b;">該当なし</span>'}</div>
+        </div>
+        <div class="sp-award-box">
+          <div class="sp-award-title">🎖 3A賞（4〜6卓A卓）</div>
+          <div class="sp-award-names">${award3A.length ? award3A.map(escapeHtml).join(' ／ ') : '<span style="color:#64748b;">該当なし</span>'}</div>
+        </div>
+        <div class="sp-award-box">
+          <div class="sp-award-title">🐉 昇り竜（毎期卓が上昇）</div>
+          <div class="sp-award-names">${awardNobori.length ? awardNobori.map(escapeHtml).join(' ／ ') : '<span style="color:#64748b;">該当なし</span>'}</div>
+        </div>
+        <div class="sp-award-box">
+          <div class="sp-award-title">🚀 区間賞（各期PQトップ）</div>
+          <div class="sp-award-names" style="font-size:11px;">${kukanList.map(escapeHtml).join('<br>')}</div>
+        </div>
+      `;
+    }
+
+    // 2. 左パネル：5期 自己資本ソート（表彰対象）
+    const entered = [];
+    const unentered = [];
+    activePlayers.forEach(p => {
+      const jv = (p.jiko_5ki !== null && p.jiko_5ki !== undefined && String(p.jiko_5ki) !== '') ? Number(p.jiko_5ki)
+               : ((currentPeriod === 5 && p.jiko !== null && p.jiko !== undefined && String(p.jiko) !== '') ? Number(p.jiko) : null);
+      const hv = (p.hyoka_5ki || (currentPeriod === 5 ? p.hyoka : '') || '').trim().toUpperCase();
+      const pq5 = (p.pq_5ki !== null && p.pq_5ki !== undefined) ? p.pq_5ki : (currentPeriod === 5 ? p.pq : '');
+      const k5 = (p.k_history && p.k_history['5'] !== null && p.k_history['5'] !== undefined) ? p.k_history['5'] : (currentPeriod === 5 ? p.k : null);
+      const item = { ...p, _jiko5: jv, _hyoka5: hv, _pq5: pq5, _k5: k5 };
+      if (jv !== null && !Number.isNaN(jv)) {
+        entered.push(item);
+      } else {
+        unentered.push(item);
+      }
+    });
+
+    entered.sort((a, b) => {
+      if (b._jiko5 !== a._jiko5) return b._jiko5 - a._jiko5;
+      const ka = a._k5 !== null && a._k5 !== undefined ? Number(a._k5) : 999;
+      const kb = b._k5 !== null && b._k5 !== undefined ? Number(b._k5) : 999;
+      return ka - kb;
+    });
+
+    // 順位採番（同点は同順位）
+    let prevJiko = null;
+    let prevRank = 0;
+    entered.forEach((item, i) => {
+      if (prevJiko !== null && item._jiko5 === prevJiko) {
+        item._rank = prevRank;
+      } else {
+        item._rank = i + 1;
+        prevRank = i + 1;
+        prevJiko = item._jiko5;
+      }
+    });
+
+    const filteredEntered = hyoshoFilter === 'PP'
+      ? entered.filter(x => x._hyoka5.endsWith('++'))
+      : entered;
+
+    const jikoListEl = document.getElementById('jikoRankList');
+    if (jikoListEl) {
+      let html = '';
+      filteredEntered.forEach((p, idx) => {
+        const isPP = p._hyoka5.endsWith('++');
+        const isHighPP = isPP && (p._hyoka5.startsWith('SS') || p._hyoka5.startsWith('S') || p._hyoka5.startsWith('A'));
+        const rankNum = hyoshoFilter === 'PP' ? (idx + 1) : p._rank;
+        const medal = rankNum === 1 ? '👑1位' : (rankNum === 2 ? '🥈2位' : (rankNum === 3 ? '🥉3位' : `${rankNum}位`));
+        const rowCls = [
+          'jiko-rank-row',
+          rankNum === 1 ? 'top1-row' : '',
+          isPP ? 'qualified-pp' : ''
+        ].filter(Boolean).join(' ');
+
+        const jikoDisp = p._jiko5 < 0 ? `△${Math.abs(p._jiko5)}` : `${p._jiko5}`;
+        const th = p.taku_history || {};
+        const takuWalk = [th['3'] || '-', th['4'] || '-', th['5'] || '-', th['6'] || '-'].join('→');
+        const qualBadge = isHighPP
+          ? '<span style="background:#f59e0b; color:#1e1b4b; padding:2px 6px; border-radius:5px; font-size:11px; font-weight:900;">★表彰資格(++)</span>'
+          : (isPP
+              ? '<span style="background:rgba(16,185,129,0.3); border:1px solid #10b981; color:#a7f3d0; padding:1px 5px; border-radius:5px; font-size:10.5px; font-weight:900;">次繰・在庫〇(++)</span>'
+              : '<span style="color:#94a3b8; font-size:11px;">—</span>');
+
+        html += `
+          <div class="${rowCls}" onclick="openEditModalFor5Ki(${p.row})" title="クリックして自己資本・来期評価を編集">
+            <span style="color:${rankNum <= 3 ? '#fde047' : '#cbd5e1'}; font-weight:900;">${medal}</span>
+            <span style="color:#fff; font-size:14px; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(formatPlayerNameForKi(p.name, 5))}</span>
+            <span style="color:#38bdf8; font-size:16px; font-weight:900; font-variant-numeric:tabular-nums;">${jikoDisp}</span>
+            <span style="color:${isPP ? '#fde047' : '#cbd5e1'}; font-size:14px; font-weight:900;">${escapeHtml(p._hyoka5 || '-')}</span>
+            <span>${qualBadge}</span>
+            <span style="color:#cbd5e1; font-size:11.5px; font-family:monospace;">${escapeHtml(takuWalk)}</span>
+            <span style="color:#94a3b8; font-size:11.5px;">${p._pq5 !== null && p._pq5 !== undefined ? p._pq5 : '-'}</span>
+          </div>
+        `;
+      });
+
+      if (hyoshoFilter === 'ALL' && unentered.length > 0) {
+        unentered.forEach(p => {
+          const th = p.taku_history || {};
+          const takuWalk = [th['3'] || '-', th['4'] || '-', th['5'] || '-', th['6'] || '-'].join('→');
+          html += `
+            <div class="jiko-rank-row" style="opacity:0.75; border-style:dashed;" onclick="openEditModalFor5Ki(${p.row})">
+              <span style="color:#64748b;">未入力</span>
+              <span style="color:#e2e8f0; font-weight:900;">${escapeHtml(formatPlayerNameForKi(p.name, 5))}</span>
+              <span style="color:#fde047; font-size:11.5px;">＋入力する</span>
+              <span style="color:#64748b;">-</span>
+              <span style="color:#64748b; font-size:11px;">${p._k5 ? `K=${p._k5}位` : '計数中'}</span>
+              <span style="color:#94a3b8; font-size:11.5px;">${escapeHtml(takuWalk)}</span>
+              <span style="color:#94a3b8; font-size:11.5px;">${p._pq5 || '-'}</span>
+            </div>
+          `;
+        });
+      }
+
+      if (!html) {
+        html = `<div style="text-align:center; padding:24px; color:#94a3b8;">該当するデータがありません</div>`;
+      }
+      jikoListEl.innerHTML = html;
+    }
+
+    // 3. 右パネル：2期・3期・4期・5期 計数(K) 早い順（4列ボード）
+    const k4Grid = document.getElementById('k4ColsGrid');
+    if (k4Grid) {
+      k4Grid.innerHTML = [2, 3, 4, 5].map(kiN => {
+        const kiKey = String(kiN);
+        const kItems = [];
+        allPlayersWithAbsent.forEach(p => {
+          const kv = p.k_history ? p.k_history[kiKey] : null;
+          if (kv !== null && kv !== undefined && Number(kv) > 0) {
+            const pqv = p.pq_history ? p.pq_history[kiKey] : null;
+            const elv = p.elapsed_history ? p.elapsed_history[kiKey] : '';
+            kItems.push({
+              row: p.row,
+              name: formatPlayerNameForKi(p.name, kiN),
+              k: Number(kv),
+              pq: pqv,
+              elapsed: elv
+            });
+          }
+        });
+        kItems.sort((a, b) => a.k - b.k);
+
+        const rowsHtml = kItems.length > 0
+          ? kItems.map(item => {
+              const isTop4 = item.k <= 4;
+              return `
+                <div class="k-rank-item ${isTop4 ? 'k-top4' : ''}" onclick="openEditModalFor5Ki(${item.row})" title="${escapeHtml(item.name)} (${kiN}期 K=${item.k}位${item.pq ? ' / PQ:' + item.pq : ''})">
+                  <div style="display:flex; align-items:center; gap:5px; min-width:0; overflow:hidden;">
+                    <span class="k-rank-num">${isTop4 ? '🏆' : ''}${item.k}位</span>
+                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(item.name)}</span>
+                  </div>
+                  <span style="font-size:10px; color:#94a3b8; flex-shrink:0;">${item.elapsed ? item.elapsed : (item.pq ? `PQ:${item.pq}` : '')}</span>
+                </div>
+              `;
+            }).join('')
+          : `<div style="text-align:center; padding:16px 4px; color:#64748b; font-size:11px;">記録なし</div>`;
+
+        return `
+          <div class="k-period-col">
+            <div class="k-period-head ${kiN === 5 ? 'ki5-head' : ''}">
+              ${kiN === 5 ? '🏆 5期 計数順(表彰)' : `⚡ ${kiN}期 計数順`} <span style="font-size:10.5px; opacity:0.85;">(${kItems.length}名)</span>
+            </div>
+            <div class="k-period-list">
+              ${rowsHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  function openEditModalFor5Ki(row) {
+    const p = (sheetState.players || []).find(x => x.row === row);
+    if (!p) return;
+    if (currentPeriod !== 5) {
+      const pbtn5 = document.getElementById('pbtn-5');
+      selectPeriod(5, pbtn5);
+    }
+    openEditModal(p);
+  }
+
+  let currentHyokaSuffix = '++';
+
+  function calcMgEquityRank(rawVal) {
+    if (rawVal === null || rawVal === undefined) return '';
+    const cleaned = String(rawVal).trim().replace(/[△▲－−]/g, '-');
+    if (cleaned === '' || cleaned === '-') return '';
+    const n = Number(cleaned);
+    if (Number.isNaN(n)) return '';
+    if (n >= 600) return 'SS';
+    if (n >= 450) return 'S';
+    if (n >= 300) return 'A';
+    if (n >= 150) return 'B';
+    if (n >= 0) return 'C';
+    if (n >= -150) return 'D';
+    return 'DD';
+  }
+
+  function updateHyokaQuickButtonsUI(rankPrefix) {
+    const r = rankPrefix || '';
+    const map = [
+      { id: 'hq-pp', lbl: 'hqLabel-pp', sfx: '++' },
+      { id: 'hq-pm', lbl: 'hqLabel-pm', sfx: '+-' },
+      { id: 'hq-mp', lbl: 'hqLabel-mp', sfx: '-+' },
+      { id: 'hq-mm', lbl: 'hqLabel-mm', sfx: '--' },
+    ];
+    const curVal = (document.getElementById('modalHyokaInput').value || '').trim().toUpperCase();
+    map.forEach(item => {
+      const btn = document.getElementById(item.id);
+      const lEl = document.getElementById(item.lbl);
+      if (lEl) lEl.textContent = r ? `${r}${item.sfx}` : item.sfx;
+      if (btn) {
+        const isAct = curVal.endsWith(item.sfx);
+        btn.classList.toggle('active', isAct);
+      }
+    });
+  }
+
+  function onJikoInputChange() {
+    const jikoVal = document.getElementById('modalJikoInput').value;
+    const rank = calcMgEquityRank(jikoVal);
+    const badge = document.getElementById('modalAutoRankBadge');
+    const hyokaInput = document.getElementById('modalHyokaInput');
+    if (rank) {
+      badge.textContent = `自動判定 ➔ 【 ${rank} 】ランク`;
+      badge.style.color = '#34d399';
+      // 現在の来期評価の末尾(++ / +- / -+ / --)を維持してランク文字を更新
+      const existing = (hyokaInput.value || '').trim().toUpperCase();
+      const m = existing.match(/([+\-]{2})$/);
+      const sfx = m ? m[1] : (currentHyokaSuffix || '++');
+      currentHyokaSuffix = sfx;
+      hyokaInput.value = `${rank}${sfx}`;
+    } else {
+      badge.textContent = '数字入力でランク自動判定';
+      badge.style.color = '#fde047';
+    }
+    updateHyokaQuickButtonsUI(rank);
+  }
+
+  function toggleJikoMinus() {
+    const inp = document.getElementById('modalJikoInput');
+    let v = (inp.value || '').trim().replace(/[△▲－−]/g, '-');
+    if (v.startsWith('-')) {
+      inp.value = v.slice(1);
+    } else {
+      inp.value = '-' + v;
+    }
+    onJikoInputChange();
+    inp.focus();
+  }
+
+  function selectHyokaSuffix(sfx) {
+    currentHyokaSuffix = sfx;
+    const jikoVal = document.getElementById('modalJikoInput').value;
+    const rank = calcMgEquityRank(jikoVal);
+    const hyokaInput = document.getElementById('modalHyokaInput');
+    if (rank) {
+      hyokaInput.value = `${rank}${sfx}`;
+    } else {
+      const existing = (hyokaInput.value || '').trim().toUpperCase().replace(/[+\-]+$/, '');
+      hyokaInput.value = `${existing}${sfx}`;
+    }
+    updateHyokaQuickButtonsUI(rank);
+  }
+
+  async function onClickPlayerCard(row) {
+    const p = (sheetState.players || []).find(x => x.row === row);
+    if (!p) return;
+
+    // まだKが入っていない場合は、1クリックで即座に次のK順位（next_k）を自動採番して★MG成績表★へ書き込み、同時に自己資本・来期評価モーダルを開く！
+    if (p.k === null || p.k === undefined) {
+      playChime('k_done');
+      const elapsedStr = getActiveKeisuTimeString();
+      const optimisticP = { ...p, k: sheetState.next_k, elapsed_str: elapsedStr };
+      openEditModal(optimisticP);
+      try {
+        const res = await apiFetch('/api/set_k', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            kai: currentKai,
+            ki: currentPeriod,
+            row: p.row,
+            name: p.name,
+            action: 'auto',
+            elapsed_str: elapsedStr
+          })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          sheetState = data;
+          renderSeisekiPanel();
+          const updatedP = (data.players || []).find(x => x.row === row);
+          if (updatedP && editingPlayer && editingPlayer.row === row) {
+            editingPlayer = updatedP;
+            document.getElementById('modalKInput').value = updatedP.k !== null && updatedP.k !== undefined ? updatedP.k : '';
+            const pill = document.getElementById('modalKStatusPill');
+            if (pill) pill.textContent = updatedP.k ? `K=${updatedP.k}位 記録済` : 'K未記録';
+          }
+        }
+      } catch (e) {
+        console.error('Failed to set K:', e);
+      }
+    } else {
+      // 既にKが入っている場合もモーダルを開いて自己資本・来期評価・PQ・Kを入力・編集できる
+      openEditModal(p);
+    }
+  }
+
+  function openEditModal(p) {
+    editingPlayer = p;
+    const dispName = p.display_name || p.name;
+    document.getElementById('modalPlayerTitle').textContent = `${p.table}卓：${dispName}（${currentPeriod}期）`;
+    const pill = document.getElementById('modalKStatusPill');
+    if (pill) {
+      pill.textContent = (p.k !== null && p.k !== undefined) ? `🏆 K=${p.k}位` : `次 ➔ K=${sheetState.next_k}位`;
+    }
+    document.getElementById('modalKInput').value = p.k !== null && p.k !== undefined ? p.k : '';
+    document.getElementById('modalPQInput').value = p.pq !== null && p.pq !== undefined ? p.pq : '';
+    document.getElementById('modalHeikinInput').value = p.heikin_p !== null && p.heikin_p !== undefined ? p.heikin_p : '';
+    document.getElementById('modalJikoInput').value = p.jiko !== null && p.jiko !== undefined ? p.jiko : '';
+    document.getElementById('modalHyokaInput').value = p.hyoka || '';
+
+    const existingHyoka = (p.hyoka || '').trim().toUpperCase();
+    const m = existingHyoka.match(/([+\-]{2})$/);
+    currentHyokaSuffix = m ? m[1] : '++';
+    const rank = calcMgEquityRank(p.jiko);
+    const badge = document.getElementById('modalAutoRankBadge');
+    if (rank) {
+      badge.textContent = `自動判定 ➔ 【 ${rank} 】ランク`;
+      badge.style.color = '#34d399';
+    } else {
+      badge.textContent = '数字入力でランク自動判定';
+      badge.style.color = '#fde047';
+    }
+    updateHyokaQuickButtonsUI(rank);
+
+    document.getElementById('editModal').classList.add('open');
+    setTimeout(() => {
+      const jikoEl = document.getElementById('modalJikoInput');
+      if (jikoEl) {
+        jikoEl.focus();
+        jikoEl.select();
+      }
+    }, 40);
+  }
+
+  function closeEditModal() {
+    editingPlayer = null;
+    document.getElementById('editModal').classList.remove('open');
+  }
+
+  async function submitModalEdit(mode) {
+    if (!editingPlayer) return;
+    const kVal = document.getElementById('modalKInput').value.trim();
+    const pqVal = document.getElementById('modalPQInput').value.trim();
+    const heikinVal = document.getElementById('modalHeikinInput').value.trim();
+    const jikoVal = document.getElementById('modalJikoInput').value.trim();
+    const hyokaVal = document.getElementById('modalHyokaInput').value.trim();
+    const action = (mode === 'clear' || kVal === '') ? 'clear' : 'set';
+
+    const targetRow = editingPlayer.row;
+    const targetName = editingPlayer.name;
+    const targetElapsed = editingPlayer.elapsed_str || getActiveKeisuTimeString();
+    closeEditModal();
+
+    try {
+      const res = await apiFetch('/api/set_k', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kai: currentKai,
+          ki: currentPeriod,
+          row: targetRow,
+          name: targetName,
+          action: action,
+          k: kVal ? parseInt(kVal, 10) : null,
+          pq: pqVal,
+          heikin_p: heikinVal,
+          jiko: jikoVal,
+          hyoka: hyokaVal,
+          elapsed_str: targetElapsed
+        })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        sheetState = data;
+        renderSeisekiPanel();
+        if (showHyoshoDashboard) renderHyoshoDashboard();
+      }
+    } catch (e) {
+      console.error('Modal save error:', e);
+    }
+  }
+
+  async function confirmClearPeriodK() {
+    if (!confirm(`第${currentKai}回・${currentPeriod}期の計数順位（K）を全員分クリアしますか？`)) return;
+    try {
+      const res = await apiFetch('/api/clear_period_k', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kai: currentKai, ki: currentPeriod })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        sheetState = data;
+        renderSeisekiPanel();
+        if (showHyoshoDashboard) renderHyoshoDashboard();
+      }
+    } catch (e) {
+      console.error('Clear period K error:', e);
+    }
+  }
+
+  async function saveMetaToServer(metaPatch) {
+    try {
+      await apiFetch('/api/save_meta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kai: currentKai, ...metaPatch })
+      });
+    } catch (e) {}
+  }
+
+  function toggleSeisekiPanel() {
+    const stg = document.getElementById('mainStage');
+    const btn = document.getElementById('toggleSidebarBtn');
+    const hidden = stg.classList.toggle('hide-sidebar');
+    btn.classList.toggle('active-toggle', !hidden);
+    btn.textContent = hidden ? '📊 成績表(K)ボードを開く' : '📊 成績表(K)ボード表示中';
+  }
+
+  function updateFullscreenBtnUI() {
+    const btn = document.getElementById('zenFsBtn');
+    const isZen = document.body.classList.contains('zen-fullscreen') || !!document.fullscreenElement;
+    if (btn) {
+      btn.classList.toggle('active-toggle', isZen);
+      btn.textContent = isZen ? '⛶ 全画面解除' : '⛶ 全画面';
+    }
+  }
+
+  async function openExternalFullscreenWindow() {
+    try {
+      await apiFetch('/api/open_fullscreen', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kai: currentKai,
+          ki: currentPeriod,
+          phase: currentPhaseKey,
+          gamePhase: gamePhaseKey,
+          rem: remainingSec,
+          keisu: bgKeisuElapsedSec,
+          running: isRunning ? 1 : 0,
+          bgRunning: bgKeisuRunning ? 1 : 0,
+          firstTbl: firstTableFinished ? firstFinishedTableName : ''
+        })
+      });
+    } catch (e) {
+      console.warn('External fullscreen error:', e);
+    }
+  }
+
+  function toggleFullScreen() {
+    const isCurrentlyZen = document.body.classList.contains('zen-fullscreen');
+    const isCurrentlyNativeFs = !!document.fullscreenElement;
+
+    if (!isCurrentlyZen && !isCurrentlyNativeFs) {
+      // 1) まず画面内タイマー最大化モード(zen-fullscreen)を即座にONにする（埋め込みブラウザでも確実に最大化）
+      document.body.classList.add('zen-fullscreen');
+      updateFullscreenBtnUI();
+
+      // 2) 標準ブラウザのフルスクリーンAPIを試行し、ブロックされた場合（Antigravity右ペイン内など）はOSフルスクリーンウィンドウを起動
+      const req = document.documentElement.requestFullscreen
+        || document.documentElement.webkitRequestFullscreen
+        || document.documentElement.msRequestFullscreen;
+      if (req) {
+        req.call(document.documentElement).then(() => {
+          updateFullscreenBtnUI();
+        }).catch(() => {
+          // 埋め込みプレビュー等でブロックされた場合はモニター全画面ブラウザを自動起動
+          openExternalFullscreenWindow();
+        });
+      } else {
+        openExternalFullscreenWindow();
+      }
+    } else {
+      document.body.classList.remove('zen-fullscreen');
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+      updateFullscreenBtnUI();
+    }
+  }
+
+  document.addEventListener('fullscreenchange', updateFullscreenBtnUI);
+
+  function restoreFromUrlParams() {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get('zen') === '1') {
+        document.body.classList.add('zen-fullscreen');
+        updateFullscreenBtnUI();
+      }
+      if (sp.get('kai')) currentKai = parseInt(sp.get('kai'), 10) || 93;
+      if (sp.get('ki')) {
+        currentPeriod = parseInt(sp.get('ki'), 10) || 4;
+        document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+        const pb = document.getElementById(`pbtn-${currentPeriod}`);
+        if (pb) pb.classList.add('active');
+      }
+      if (sp.get('gamePhase')) gamePhaseKey = sp.get('gamePhase');
+      if (sp.get('phase')) currentPhaseKey = sp.get('phase');
+      if (sp.get('rem') !== null && sp.get('rem') !== '') {
+        remainingSec = parseInt(sp.get('rem'), 10);
+        phaseTotalSec = Math.max(remainingSec, (PHASES[gamePhaseKey] || PHASES.second).defaultSec);
+      }
+      if (sp.get('keisu') !== null && sp.get('keisu') !== '') {
+        bgKeisuElapsedSec = parseInt(sp.get('keisu'), 10) || 0;
+      }
+      if (sp.get('firstTbl')) {
+        firstTableFinished = true;
+        firstFinishedTableName = sp.get('firstTbl');
+      }
+      if (sp.get('bgRunning') === '1') bgKeisuRunning = true;
+      if (sp.get('running') === '1') isRunning = true;
+      if (isRunning || bgKeisuRunning) ensureMasterLoop();
+      updateTimerDisplay();
+    } catch (e) {}
+  }
+
+  function escapeHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  // キーボードショートカット
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Escape') {
+      const em = document.getElementById('editModal');
+      if (em && em.classList.contains('open')) {
+        closeEditModal();
+        return;
+      }
+      if (document.body.classList.contains('zen-fullscreen')) {
+        document.body.classList.remove('zen-fullscreen');
+        updateFullscreenBtnUI();
+        return;
+      }
+    }
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    if (e.code === 'Space') {
+      e.preventDefault();
+      toggleStartPause();
+    } else if (e.code === 'KeyF') {
+      e.preventDefault();
+      toggleFullScreen();
+    }
+  });
+
+  // 現在時刻時計
+  setInterval(() => {
+    const now = new Date();
+    document.getElementById('realClock').textContent =
+      now.toLocaleTimeString('ja-JP', { hour12: false });
+  }, 1000);
+
+  // ★MG成績表★ との定期ポーリング同期（5秒間隔）＋ PC⇔iPadタイマーリアルタイム同期（2秒間隔）
+  setInterval(() => {
+    syncFromSheet(false);
+  }, 5000);
+  setInterval(() => {
+    pollTimerSync();
+  }, 2000);
+
+  // iPadで画面がスリープしないよう Screen Wake Lock を要求
+  async function requestWakeLock() {
+    try {
+      if ('wakeLock' in navigator) {
+        await navigator.wakeLock.request('screen');
+      }
+    } catch (e) {}
+  }
+  document.addEventListener('click', requestWakeLock, { once: true });
+  document.addEventListener('touchstart', requestWakeLock, { once: true });
+
+  // 初期化
+  switchPhase('first', false);
+  restoreFromUrlParams();
+  renderRuleVisuals();
+  pollTimerSync();
+  loadSessionsList();
 </script>
 </body>
 </html>
