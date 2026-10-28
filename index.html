@@ -1480,13 +1480,13 @@
       </div>
 
       <!-- 次のK順位 ＆ 卓終了トリガー -->
-      <div class="sp-next-banner">
+      <div class="sp-next-banner" id="nextKBanner">
         <div class="next-k-box">
-          <span class="next-k-label">次の計数完了 ➔</span>
+          <span class="next-k-label" id="nextKLabel">次の計数完了 ➔</span>
           <span class="next-k-num" id="nextKDisplay">K = 1位</span>
           <span style="font-size:11px; color:#cbd5e1;" id="completedCountText">(完了 0 / 0名)</span>
         </div>
-        <div style="font-size:10.5px; color:#fde68a; font-weight:800; white-space:nowrap;">
+        <div style="font-size:10.5px; color:#fde68a; font-weight:800; white-space:nowrap;" id="nextKHint">
           👆 氏名クリックでK・自己資本入力
         </div>
       </div>
@@ -2746,7 +2746,33 @@
   function renderSeisekiPanel() {
     document.getElementById('spHeaderTitle').textContent =
       `★MG成績表★ 第${currentKai}回・${currentPeriod}期 計数(K)`;
-    document.getElementById('nextKDisplay').textContent = `K = ${sheetState.next_k}位`;
+    const totalCnt = Number(sheetState.total_count) || 0;
+    const compCnt = Number(sheetState.completed_count) || 0;
+    const isAllKDone = totalCnt > 0 && (compCnt >= totalCnt || Number(sheetState.next_k) > totalCnt);
+    const nextKLblEl = document.getElementById('nextKLabel');
+    const nextKNumEl = document.getElementById('nextKDisplay');
+    const nextKBannerEl = document.getElementById('nextKBanner');
+    if (isAllKDone) {
+      if (nextKLblEl) nextKLblEl.textContent = '計数状況 ➔';
+      if (nextKNumEl) {
+        nextKNumEl.textContent = `🎉 全${totalCnt}名 完了！`;
+        nextKNumEl.style.color = '#34d399';
+      }
+      if (nextKBannerEl) {
+        nextKBannerEl.style.background = 'rgba(16, 185, 129, 0.18)';
+        nextKBannerEl.style.borderColor = 'rgba(16, 185, 129, 0.55)';
+      }
+    } else {
+      if (nextKLblEl) nextKLblEl.textContent = '次の計数完了 ➔';
+      if (nextKNumEl) {
+        nextKNumEl.textContent = `K = ${sheetState.next_k}位`;
+        nextKNumEl.style.color = '#fde047';
+      }
+      if (nextKBannerEl) {
+        nextKBannerEl.style.background = '';
+        nextKBannerEl.style.borderColor = '';
+      }
+    }
     const absList = (sheetState.absent_players || []).map(a => a.name).join('・');
     const absNote = absList ? ` ／ 欠席:${absList}` : '';
     document.getElementById('completedCountText').textContent =
