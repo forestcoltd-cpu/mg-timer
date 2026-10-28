@@ -1472,6 +1472,7 @@
           <span id="spHeaderTitle">★MG成績表★ 計数順位(K)連動</span>
         </div>
         <div style="display:flex; gap:4px;">
+          <button class="icon-btn" style="background:rgba(16,185,129,0.28); border-color:#10b981; color:#a7f3d0;" id="kimeruBtn" onclick="manualTriggerKimeru()" title="今期の成績確定 ➔ 次期卓割り・席次PNG作成・LINE送信を実行">✅ 期終了確定</button>
           <button class="icon-btn" style="background:rgba(245,158,11,0.25); border-color:#f59e0b; color:#fde047;" onclick="toggleHyoshoDashboard()" title="5期自己資本ソート＆2〜5期K早い順の大画面を開く">🏆 表彰画面</button>
           <button class="icon-btn" onclick="syncFromSheet(true)" title="今すぐGoogleスプレッドシートと同期">🔄 同期</button>
           <button class="icon-btn" onclick="confirmClearPeriodK()" title="今期のK順位をリセット">🗑 Kクリア</button>
@@ -1805,45 +1806,45 @@
 
   function resolveBackendForGithubPages() {
     if (!location.hostname.endsWith('github.io')) return;
-    // 1) まず同じPC内の http://127.0.0.1:8095 が生きていれば最優先で直結（トンネル不要で100%確実）
+    // Googleシート(MG!G4)のHTTPSトンネルURLを最優先で設定（HTTPSページからのHTTP通信ブロックを完全回避）
+    window.google = {
+      visualization: {
+        Query: {
+          setResponse: function(res) {
+            try {
+              const rows = res.table.rows;
+              if (rows && rows.length > 0) {
+                const c = rows[0].c;
+                for (let i = c.length - 1; i >= 0; i--) {
+                  if (c[i] && c[i].v && String(c[i].v).indexOf('https://') === 0) {
+                    const raw = String(c[i].v).trim().split('?')[0].replace(/\/+$/, '');
+                    if (!raw.includes('github.io')) {
+                      activeApiBase = raw;
+                      loadSessionsList();
+                      return;
+                    }
+                  }
+                }
+              }
+            } catch (e) {}
+          }
+        }
+      }
+    };
+    const s = document.createElement('script');
+    s.src = 'https://docs.google.com/spreadsheets/d/1-W4fuicyCAptbB-DbeezaJDWDHCMrVNEv-YNAI0I0Fg/gviz/tq?tqx=out:json&sheet=MG&range=A4:G4&_=' + Date.now();
+    document.head.appendChild(s);
+
+    // もしPCローカルで http://127.0.0.1:8095 も応答する場合はバックアップとして利用
     fetch('http://127.0.0.1:8095/api/timer_sync', { cache: 'no-store' })
       .then(r => r.json())
       .then(d => {
-        if (d && d.ok) {
+        if (d && d.ok && !activeApiBase) {
           activeApiBase = 'http://127.0.0.1:8095';
           loadSessionsList();
         }
       })
-      .catch(() => {
-        // 2) iPad・スマホ等の外部端末の場合は Googleシート(MG!G4)または tunnel.json からバックエンドAPI接続先を裏で設定（画面遷移はしない！）
-        window.google = {
-          visualization: {
-            Query: {
-              setResponse: function(res) {
-                try {
-                  const rows = res.table.rows;
-                  if (rows && rows.length > 0) {
-                    const c = rows[0].c;
-                    for (let i = c.length - 1; i >= 0; i--) {
-                      if (c[i] && c[i].v && String(c[i].v).indexOf('https://') === 0) {
-                        const raw = String(c[i].v).trim().split('?')[0].replace(/\/+$/, '');
-                        if (!raw.includes('github.io')) {
-                          activeApiBase = raw;
-                          loadSessionsList();
-                          return;
-                        }
-                      }
-                    }
-                  }
-                } catch (e) {}
-              }
-            }
-          }
-        };
-        const s = document.createElement('script');
-        s.src = 'https://docs.google.com/spreadsheets/d/1-W4fuicyCAptbB-DbeezaJDWDHCMrVNEv-YNAI0I0Fg/gviz/tq?tqx=out:json&sheet=MG&range=A4:G4&_=' + Date.now();
-        document.head.appendChild(s);
-      });
+      .catch(() => {});
   }
   resolveBackendForGithubPages();
 
@@ -3214,6 +3215,13 @@
         if (data.ok) {
           sheetState = data;
           renderSeisekiPanel();
+          if (data.auto_triggered) {
+            playChime('gong');
+            if (currentPeriod === 5 || data.auto_triggered_ki === 5) {
+              toggleHyoshoDashboard(true);
+            }
+            showTriggerToast(data.auto_triggered_msg || `🎉 第${currentKai}回・${currentPeriod}期 全員の成績入力が完了し、自動処理を開始しました！`);
+          }
           const updatedP = (data.players || []).find(x => x.row === row);
           if (updatedP && editingPlayer && editingPlayer.row === row) {
             editingPlayer = updatedP;
@@ -3310,10 +3318,55 @@
       if (data.ok) {
         sheetState = data;
         renderSeisekiPanel();
-        if (showHyoshoDashboard) renderHyoshoDashboard();
+        if (data.auto_triggered) {
+          playChime('gong');
+          if (currentPeriod === 5 || data.auto_triggered_ki === 5) {
+            toggleHyoshoDashboard(true);
+          }
+          showTriggerToast(data.auto_triggered_msg || `🎉 第${currentKai}回・${currentPeriod}期 全員の成績入力が完了し、自動処理を開始しました！`);
+        } else if (showHyoshoDashboard) {
+          renderHyoshoDashboard();
+        }
       }
     } catch (e) {
       console.error('Modal save error:', e);
+    }
+  }
+
+  function showTriggerToast(msg) {
+    let box = document.getElementById('autoTriggerToast');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'autoTriggerToast';
+      box.style.cssText = 'position:fixed; top:16px; left:50%; transform:translateX(-50%); z-index:99999; background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:2px solid #a7f3d0; border-radius:12px; padding:12px 22px; font-size:15px; font-weight:900; box-shadow:0 12px 32px rgba(0,0,0,0.6); text-align:center;';
+      document.body.appendChild(box);
+    }
+    box.textContent = msg;
+    box.style.display = 'block';
+    setTimeout(() => { box.style.display = 'none'; }, 7000);
+  }
+
+  async function manualTriggerKimeru() {
+    const label = currentPeriod === 5
+      ? `第${currentKai}回・5期の最終確定（6卓仮想卓割り・表彰画面表示・順位表PNG出力）を実行しますか？`
+      : `第${currentKai}回・${currentPeriod}期の終了確定（PQソート・${currentPeriod + 1}期卓割り・席次PNG出力・LINE送信）を実行しますか？`;
+    if (!confirm(label)) return;
+    try {
+      const res = await apiFetch('/api/trigger_kimeru', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kai: currentKai, ki: currentPeriod })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        sheetState = data;
+        playChime('gong');
+        renderSeisekiPanel();
+        if (currentPeriod === 5) toggleHyoshoDashboard(true);
+        showTriggerToast(data.auto_triggered_msg || `✅ ${currentPeriod}期の確定処理を開始しました！`);
+      }
+    } catch (e) {
+      console.error('Manual kimeru error:', e);
     }
   }
 
